@@ -223,4 +223,7 @@ $RECYCLE.BIN/
 # Python virtual env
 venv/
 
+.vscode/
+secrets.json
+
 # End of https://www.gitignore.io/api/macos,python,django,windows
