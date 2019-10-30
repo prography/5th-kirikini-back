@@ -11,24 +11,38 @@ ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
 
 - ssh 접속
 
+```
 ssh -i ~/.ssh/kirikini.pem ubuntu@ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
+python manage.py runserver 0:8000
+```
 
 - 최신 끼리끼니 새로 받아오기
 
+```
 git pull
 pip install -r requirements.txt
-
+```
 
 - 버전
 
 Python3.7.1
 
-- 마이그레이션 파일 지우기 : 중간에 디비가 수정되었을때
+- 마이그레이션 파일 지우기 : 중간에 디비가 수정되었을때(superuser 다시 생성해야함)
 
+```
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
-
 find . -path "*/migrations/*.pyc" -delete
-
 python manage.py makemigrations
-
 python manage.py migrate
+```
+
+- postgres 리셋
+
+```
+sudo su postgres
+psql
+drop database kirikini;
+create database kirikini with owner admin;
+\q
+exit
+```
