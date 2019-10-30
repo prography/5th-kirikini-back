@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os, json
+import os, json, datetime
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -33,12 +33,12 @@ def get_secret(setting, secrets=secrets):
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
 
-SECRET_KEY = get_secret("SECRET_KEY")
+SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '.amazonaws.com']
+ALLOWED_HOSTS = ['localhost', '.ap-northeast-2.compute.amazonaws.com']
 
 
 # Application definition
@@ -47,6 +47,27 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES' : [
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication', # for general
+        'rest_framework.authentication.SessionAuthentication', # for admin
+        'rest_framework.authentication.BasicAuthentication', # for admin
+    ]
+}
+
+JWT_AUTH = { 
+    'JWT_ALLOW_REFRESH': True, 
+    'JWT_SECRET_KEY': get_secret("JWT_SECRET_KEY"),
+    'JWT_ALGORITHM': 'HS256', 
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300), 
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7), 
+}
+
+REST_USE_JWT = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -58,6 +79,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_swagger',
+    
     'server',
     # 'server.apps.ServerConfig',
     
@@ -66,16 +88,15 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.kakao',
-    'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.facebook',
-    'allauth.socialaccount.providers.google',
 
     # django-rest-auth
     'rest_framework.authtoken',
     'rest_auth',
+    'rest_auth.registration',
 ]
 
-SITE_ID = 2
+SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'auth.User'
 

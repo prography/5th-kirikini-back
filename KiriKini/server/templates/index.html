@@ -15,10 +15,8 @@
     {% if user.is_authenticated %}
       <div>{{user.username}}으로 로그인 되었습니다</div>
     {% else %}
-      <div><a href="{% provider_login_url 'google' %}">구글 로그인</a></div>
-      <div><a href="{% provider_login_url 'facebook' %}">페이스북 로그인</a></div>
-      <div><a href="{% provider_login_url 'kakao' %}">카카오 로그인</a></div>
-      <div><a href="{% provider_login_url 'naver' %}">네이버 로그인</a></div>
+      <div><a href="{% provider_login_url 'facebook' method='oauth2' %}">페이스북 로그인</a></div>
+      <div><a href="{% provider_login_url 'kakao' method='oauth2' %}">카카오 로그인</a></div>
     {% endif %}
 </div>
 </body>

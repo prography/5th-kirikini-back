@@ -10,7 +10,6 @@ class User(models.Model):
 	token = models.CharField(max_length=255)
 	accessToken = models.CharField(max_length=255)
 	refreshToken = models.CharField(max_length=255)
-	mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
 
 	def __str__(self):
 		return self.name
@@ -21,7 +20,7 @@ class Meal(models.Model):
 	mealType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(3)])  # 0: 집밥, 1: 외식, 2:배달, 3:간편식
 	gihoType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 커피, 1: 술
 	picURL = models.CharField(max_length=255)
-	mealRateId = models.ForeignKey('MealRate', on_delete=models.CASCADE)
+	userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	# commentId = models.ForeignKey('Comment', on_delete=models.CASCADE)
 
 	def __str__(self):
@@ -31,6 +30,7 @@ class Meal(models.Model):
 class MealRate(models.Model):
 	userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+	mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
 
 	def __str__(self):
 		return self.name
@@ -49,4 +49,8 @@ class Report(models.Model):
 
 # class Comment(models.Model):
 	# userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	# mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
 	# content = models.CharField()
+
+	# def __str__(self):
+	# 	return self.name

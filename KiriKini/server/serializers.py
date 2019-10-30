@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from server.models import Meal
+from server.models import Meal, User
 
 
 class MealSerializer(serializers.ModelSerializer):
@@ -31,3 +31,8 @@ class MealSerializer(serializers.ModelSerializer):
     #     instance.style = validated_data.get('style', instance.style)
     #     instance.save()
     #     return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'name', 'token', 'accessToken', 'refreshToken')
