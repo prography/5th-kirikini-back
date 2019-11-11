@@ -150,12 +150,8 @@ WSGI_APPLICATION = 'KiriKini.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kirikini',
-        'USER': 'admin',
-        'PASSWORD': 'admin', # DEV: admin, PROD: get_secret("DATABASE_PASSWORD")
-        'HOST': 'localhost', # DEV: localhost, PROD: ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
-        'PORT': '',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

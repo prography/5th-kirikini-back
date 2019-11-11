@@ -38,34 +38,10 @@ def create_meal(request):
             return JsonResponse(meals.data, status=201)
         return JsonResponse(meals.errors, status=400)
 
-# @api_view(['PUT','DELETE'])
-# def meal_detail(request,pk):
-#     """
-#     업데이트, 삭제
-#     """
-#     try:
-#         meals = Meal.objects.get(pk=pk)
-#     except Meal.DoesNotExist:
-#         return JsonResponse(meals.data, status=400)
-    
-    # if request.method == 'GET':
-    #     meals = MealSerializer(meals)
-    #     return JsonResponse(meals.data)
-    
-    # elif request.method == 'PUT':
-    #     meals = MealSerializer(meals, data=data)
-    #     if meals.is_valid():
-    #         meals.save()
-    #         return JsonResponse(meals.data)
-    #     return JsonResponse(meals.errors, status=400)
-    
-    # elif request.method == 'DELETE':
-    #     meals.delete()
-    #     return JsonResponse(status=204)
-
 @csrf_exempt
 def meal_detail(request, pk):
     """
+    GET, PUT, DELETE
     """
     try:
         meals = Meal.objects.get(pk=pk)
@@ -86,11 +62,3 @@ def meal_detail(request, pk):
     elif request.method == 'DELETE':
         meals.delete()
         return HttpResponse(status=204)
-
-# class MealViewSet(viewsets.ReadOnlyModelViewSet):
-#     """
-#     this viewset automatically provides 'list' and 'detail'
-#     """
-#     queryset = Meal.objects.all()
-#     serializer_class = MealSerializer
-    
