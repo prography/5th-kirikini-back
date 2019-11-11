@@ -100,6 +100,19 @@ SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'auth.User'
 
+# AWS S3
+AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
+AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
+AWS_QUERYSTRING_AUTH = False
+AWS_REGION = 'ap-northeast-2'
+AWS_DEFAULT_ACL = "private"
+AWS_S3_HOST = 's3.%s.amazonaws.com' % AWS_REGION
+AWS_STORAGE_BUCKET_NAME = 'kirikini'
+AWS_S3_CUSTOME_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
