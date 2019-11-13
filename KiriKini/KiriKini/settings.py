@@ -219,11 +219,7 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # AWS S3
 AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
@@ -233,17 +229,13 @@ AWS_REGION = 'ap-northeast-2'
 AWS_DEFAULT_ACL = "private"
 AWS_S3_HOST = 's3.%s.amazonaws.com' % AWS_REGION
 AWS_STORAGE_BUCKET_NAME = 'kirikini'
-AWS_S3_CUSTOME_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
 DEFAULT_FILE_STORAGE = 'config.asset_storage.MediaStorage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-# Static Setting
-# STATIC_URL = "https://%s/" % AWS_S3_CUSTOM_DOMAIN
-
-
-# Media Setting
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = 'https://%s/' % (AWS_S3_CUSTOM_DOMAIN)
 # MEDIA_URL = "https://%s/" % AWS_S3_CUSTOM_DOMAIN
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
