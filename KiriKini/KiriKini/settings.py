@@ -49,25 +49,12 @@ AUTHENTICATION_BACKENDS = (
 )
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+    # JSON 형식으로만 보이도록 설정
+    'DEFAULT_RENDER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
     ),
-    'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication', # for general
-        'rest_framework.authentication.SessionAuthentication', # for admin
-        'rest_framework.authentication.BasicAuthentication', # for admin
-    ]
 }
 
-JWT_AUTH = { 
-    'JWT_ALLOW_REFRESH': True, 
-    'JWT_SECRET_KEY': get_secret("JWT_SECRET_KEY"),
-    'JWT_ALGORITHM': 'HS256', 
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300), 
-    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7), 
-}
-
-REST_USE_JWT = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
