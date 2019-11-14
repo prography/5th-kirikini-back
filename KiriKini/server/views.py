@@ -22,7 +22,7 @@ def user_detail(request, pk):
         users = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return HttpResponse(status=404)
-    # 특정 음식 조회
+    # 특정 User 조회
     if request.method == 'GET':
         serializer = UserSerializer(users)
         return Response(serializer.data)

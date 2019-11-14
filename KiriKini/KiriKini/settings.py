@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os, json, datetime
+from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -38,7 +39,7 @@ SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '.ap-northeast-2.compute.amazonaws.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.ap-northeast-2.compute.amazonaws.com']
 
 
 # Application definition
@@ -53,8 +54,45 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+<<<<<<< HEAD
 }
 
+=======
+    'DEFAULT_AUTHENTICATION_CLASSES' : [
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # for general
+        'rest_framework.authentication.BasicAuthentication', # for admin
+        'rest_framework.authentication.SessionAuthentication', # for admin
+    ]
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': get_secret("DJANGO_SECRET_KEY"),
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+
+REST_USE_JWT = True
+>>>>>>> origin/develop
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,6 +104,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_swagger',
+    'storages',
     
     'server',
     # 'server.apps.ServerConfig',
@@ -81,11 +120,13 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_auth',
     'rest_auth.registration',
+
+    'sslserver'
 ]
 
 SITE_ID = 2
 LOGIN_REDIRECT_URL = '/'
-AUTH_USER_MODEL = 'auth.User'
+AUTH_USER_MODEL = 'server.User'
 
 # AWS S3
 AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
@@ -175,9 +216,46 @@ USE_L10N = True
 
 USE_TZ = True
 
+# ALLAUTH FACEBOOK SETTING
+SOCIALACCOUNT_PROVIDERS = {
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile', 'user_friends'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'INIT_PARAMS': {'cookie': True},
+        'FIELDS': [
+            'email',
+            'name',
+            'gender',
+        ],
+        'EXCHANGE_TOKEN': True,
+        'LOCALE_FUNC': lambda request: 'ko_KR',
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v2.9',
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+
+# AWS S3
+AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
+AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
+AWS_QUERYSTRING_AUTH = False
+AWS_REGION = 'ap-northeast-2'
+AWS_DEFAULT_ACL = "public"
+AWS_S3_HOST = 's3.%s.amazonaws.com' % AWS_REGION
+AWS_STORAGE_BUCKET_NAME = 'kirikini'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATIC_URL = 'https://%s/' % (AWS_S3_CUSTOM_DOMAIN)
