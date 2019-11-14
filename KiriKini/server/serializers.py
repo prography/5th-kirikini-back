@@ -5,11 +5,13 @@ from server.models import Meal, User
 class MealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meal
-        # fields = ('countType', 'mealType', 'gihoType', 'picURL')
-        fields ='__all__'
+        fields = '__all__'
+        # fields = ['countType', 'mealType', 'gihoType', 'picURL']
+        
 
 
 class UserSerializer(serializers.ModelSerializer):
+    # user = serializers.PrimaryKeyRelatedField(many=True,queryset=User.objects.all())
     class Meta:
         model = User
         fields = ('email', 'name', 'token', 'accessToken', 'refreshToken')

@@ -10,7 +10,7 @@ urlpatterns = [
     path('api/', include('rest_framework.urls')),
     path('meal', views.create_meal),
     path('meal/<int:pk>',views.meal_detail),
-    # path('meal/user/{userid}'),
+    path('meal/user/<int:pk>',views.user_detail),
     # path('meal/user/{userid}/{month}/{week}')
     path('docs/', get_swagger_view(title="API 문서"), name="swagger"),
 ]

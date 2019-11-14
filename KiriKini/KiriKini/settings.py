@@ -83,7 +83,7 @@ INSTALLED_APPS = [
     'rest_auth.registration',
 ]
 
-SITE_ID = 1
+SITE_ID = 2
 LOGIN_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'auth.User'
 

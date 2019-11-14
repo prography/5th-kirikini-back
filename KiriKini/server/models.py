@@ -20,7 +20,7 @@ class Meal(models.Model):
 	mealType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(3)])  # 0: 집밥, 1: 외식, 2:배달, 3:간편식
 	gihoType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 커피, 1: 술
 	picURL = models.CharField(max_length=255)
-	# userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	user = models.ForeignKey('User',related_name='user', on_delete=models.CASCADE)
 	# # commentId = models.ForeignKey('Comment', on_delete=models.CASCADE)
 
 
