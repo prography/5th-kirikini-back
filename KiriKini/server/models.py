@@ -28,16 +28,16 @@ class Meal(models.Model):
 
 
 class MealRate(models.Model):
-	userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	# userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
-	mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
+	# mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
 
 	def __str__(self):
 		return self.name
 
 
 class Report(models.Model):
-	userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	# userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 주간, 1: 월간
 	feedback = models.TextField()
 	analysis = models.TextField()
