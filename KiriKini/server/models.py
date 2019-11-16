@@ -28,9 +28,9 @@ class User(AbstractBaseUser):
 	username = models.CharField(max_length=20)
 	# token = models.CharField(max_length=255, null=True)
 	# accessToken = models.CharField(max_length=255, null=True)
-	refreshToken = models.CharField(max_length=255, null=True)
-	is_active = models.BooleanField(default=True)
-	is_admin = models.BooleanField(default=False)
+	# refreshToken = models.CharField(max_length=255, null=True)
+	# is_active = models.BooleanField(default=True)
+	# is_admin = models.BooleanField(default=False)
 
 	objects = UserManager()
 	USERNAME_FIELD = 'email'
