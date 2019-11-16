@@ -224,6 +224,8 @@ $RECYCLE.BIN/
 venv/
 
 .vscode/
-secrets.json
+secrets.json'
+
+myvenv/
 
 # End of https://www.gitignore.io/api/macos,python,django,windows
