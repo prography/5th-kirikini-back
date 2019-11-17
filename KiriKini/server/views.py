@@ -21,6 +21,11 @@ from rest_auth.registration.views import SocialLoginView
 from .serializers import MealSerializer, UserSerializer
 from .models import Meal
 from django.contrib.auth import get_user_model
+
+from rest_framework import generics
+# from rest_framework import permissions
+# from server.permissions import IsOwnerOrReadOnly
+
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
@@ -191,6 +196,7 @@ def facebook_login(request):
 
 @api_view(['GET'])
 def detail_user(request, pk):
+    # permissions = (permissions.IsAuthenticatedOrReadOnly,)
     """
     """
     try:
@@ -219,6 +225,7 @@ def create_meal(request):
 
 @api_view(['GET','PUT','DELETE'])
 def detail_meal(request,pk):
+    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
     """
     try:
@@ -239,6 +246,13 @@ def detail_meal(request,pk):
         meals.delete()
         return Response(status=204)
 
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 # class FacebookLogin(SocialLoginView):

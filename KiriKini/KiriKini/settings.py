@@ -48,27 +48,27 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.IsAdminUser'
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # for general
-        'rest_framework.authentication.SessionAuthentication', # for admin
-        'rest_framework.authentication.BasicAuthentication', # for admin
-    ]
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#         'rest_framework.permissions.IsAdminUser'
+#     ),
+#     # 'DEFAULT_AUTHENTICATION_CLASSES' : [
+#     #     'rest_framework_simplejwt.authentication.JWTAuthentication', # for general
+#     #     'rest_framework.authentication.SessionAuthentication', # for admin
+#     #     'rest_framework.authentication.BasicAuthentication', # for admin
+#     # ]
+# }
 
-JWT_AUTH = { 
-    'JWT_ALLOW_REFRESH': True, 
-    'JWT_SECRET_KEY': get_secret("JWT_SECRET_KEY"),
-    'JWT_ALGORITHM': 'HS256', 
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300), 
-    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7), 
-}
+# JWT_AUTH = { 
+#     'JWT_ALLOW_REFRESH': True, 
+#     'JWT_SECRET_KEY': get_secret("JWT_SECRET_KEY"),
+#     'JWT_ALGORITHM': 'HS256', 
+#     'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300), 
+#     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7), 
+# }
 
-REST_USE_JWT = True
+# REST_USE_JWT = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',

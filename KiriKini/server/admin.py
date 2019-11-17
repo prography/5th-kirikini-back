@@ -1,12 +1,11 @@
-# # -*- coding: utf-8 -*-
-# from __future__ import unicode_literals
-# from django.contrib import admin
-# from django.contrib.auth.models import Group
-# from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from django.contrib import admin
+from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-# from .forms import UserChangeForm, UserCreationForm
-# from .models import User
-
+from .forms import UserChangeForm, UserCreationForm
+from .models import User, Meal
 
 # class UserAdmin(BaseUserAdmin):
 #     form = UserChangeForm
@@ -29,5 +28,7 @@
 #     ordering = ('email',)
 #     filter_horizontal = ()
 
+admin.site.register(User)
+admin.site.register(Meal)
 # admin.site.register(User, UserAdmin)
 # admin.site.unregister(Group)

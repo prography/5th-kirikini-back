@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.html import HtmlFormatter
+# from pygments import highlight
 
 class UserManager(BaseUserManager):
 	def create_user(self, email, password):
@@ -56,7 +58,17 @@ class Meal(models.Model):
 	gihoType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 커피, 1: 술
 	picURL = models.CharField(max_length=255)
 	userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	# manahighlighted = models.TextField(null=True)
 	# commentId = models.ForeignKey('Comment', on_delete=models.CASCADE)
+	# def save(self, *args, **kwargs):
+	# 	lexer = get_lexer_by_name(self.language)
+	# 	linenos = self.linenos and 'table' or False
+	# 	options = self.title and {'title':self.title} or {}
+	# 	formatter = HtmlFormatter(style=self.style, linenos=linenos, full=True, **options)
+	# 	self.highlighted = highlight(self.code, lexer, formatter)
+	# 	super(Meal, self).save(*args, **kwargs)
+
+
 
 	def __str__(self):
 		return self.name
@@ -80,6 +92,7 @@ class Report(models.Model):
 
 	def __str__(self):
 		return self.name
+
 
 
 # class Comment(models.Model):
