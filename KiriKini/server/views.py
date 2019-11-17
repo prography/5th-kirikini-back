@@ -188,6 +188,20 @@ def facebook_login(request):
     }
     return Response(data, status=status.HTTP_201_CREATED)
 
+
+@api_view(['GET'])
+def detail_user(request, pk):
+    """
+    """
+    try:
+        users = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response(status=400)
+    if request.method == 'GET':
+        serializer = UserSerializer(meals)
+        return Response(serializer.data)
+
+
 @api_view(['GET','POST'])
 def create_meal(request):
     """
