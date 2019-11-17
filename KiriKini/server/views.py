@@ -3,12 +3,11 @@ from __future__ import unicode_literals
 import json, requests
 
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, renderer_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -71,9 +70,7 @@ def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     return Response(data = new_access_token, status=status.HTTP_201_CREATED) # 새 access token 반환
     
 
-@api_view(['GET', 'POST'])
 @csrf_exempt
-@renderer_classes((JSONRenderer))
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     body = dict(request.POST)
     print(body)
@@ -121,11 +118,11 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
             'jwt_refresh_token': jwt_refresh_token
         }
 
-        return Response(data=data, status=status.HTTP_201_CREATED)
+        return JsonResponse(data, status=status.HTTP_200_OK)
 
     else:
         data = {'error': '소셜로그인을 다시 진행해주세요.'}
-        return Response(data=data, status=status.HTTP_401_UNAUTHORIZED)
+        return JsonResponse(data, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @csrf_exempt
@@ -134,64 +131,49 @@ def facebook_login(request):
     access_token = body['access_token']
     # refresh_token = body['refresh_token']
 
-    # params_access = {
-    #     "client_id": FACEBOOK_APP_ID,
-    #     "redirect_uri": FACEBOOK_REDIRECT_URI,
-    #     "client_secret": FACEBOOK_SECRET,
-    #     "code": code
-    # }
-    # tokens = requests.get("https://graph.facebook.com/v5.0/oauth/access_token", params=params_access).json()
-    # print("tokens: ", tokens)
-    # access_token = tokens['access_token']
-    # # refresh_token = tokens['refresh_token']
-
     params_debug = {
         "input_token": access_token,
         "access_token": f'{FACEBOOK_APP_ID}|{FACEBOOK_SECRET}'
     }
-    debug = requests.get("https://graph.facebook.com/debug_token", params=params_debug).json()
-    print("debug:", debug)
+    debug = requests.get("https://graph.facebook.com/debug_token", params=params_debug)
+    if debug.status_code == status.HTTP_200_OK:
 
-    params_user = {
-        "fields": ["email"],
-        "access_token": access_token
-    }
-    user_fb_data = requests.get("https://graph.facebook.com/me", params=params_user).json()
-    user_email = user_fb_data['email']
-
-    user = User.objects.filter(email=user_email)
-    if not user:
-        user_data = {
-            'email': user_email,
-            'username': user_email,
-            'password': access_token[0:10],
-            'accessToken': access_token,
-            # 'refreshToken': refresh_token,
+        params_user = {
+            "fields": ["email"],
+            "access_token": access_token
         }
-        user = UserSerializer(data=user_data, partial=True)
-        if user.is_valid():
-            user.save()
-            print("user created")
-        else:
-            print("error", user.errors)
+        user_fb_data = requests.get("https://graph.facebook.com/me", params=params_user).json()
+        user_email = user_fb_data['email']
 
-    jwt_data = {
-        'email': user_email,
-        'password': access_token[0:10]
-    }
-    jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
-    access_token = jwt['access']
-    refresh_token = jwt['refresh']
-    data = {
-        'access_token': access_token,
-        'refresh_token': refresh_token
-    }
-    return Response(data, status=status.HTTP_201_CREATED)
+        user = User.objects.filter(email=user_email)
+        if not user:
+            user_data = {
+                'email': user_email,
+                'username': user_email,
+                'password': access_token[0:10],
+                'accessToken': access_token,
+                # 'refreshToken': refresh_token,
+            }
+            user = UserSerializer(data=user_data, partial=True)
+            if user.is_valid():
+                user.save()
+                print("user created")
+            else:
+                print("error", user.errors)
 
-
-# class FacebookLogin(SocialLoginView):
-#     adapter_class = FacebookOAuth2Adapter
-
-
-# class KakaoLogin(SocialLoginView):
-#     adapter_class = KakaoOAuth2Adapter
+        jwt_data = {
+            'email': user_email,
+            'password': access_token[0:10]
+        }
+        jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
+        print("jwt: ", jwt)
+        access_token = jwt['access']
+        refresh_token = jwt['refresh']
+        data = {
+            'jwt_access_token': access_token,
+            'jwt_refresh_token': refresh_token
+        }
+        return JsonResponse(data, status=status.HTTP_201_CREATED)
+    else:
+        data = {'error': '소셜로그인을 다시 진행해주세요.'}
+        return JsonResponse(data, status=status.HTTP_401_UNAUTHORIZED)
