@@ -51,23 +51,24 @@ def verify_jwt(jwt):
 @csrf_exempt
 def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     body = dict(request.POST) # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
-    access_token = body['access_token']
-    refresh_token = body['refresh_token']
+    print(body)
+    jwt_access_token = body['jwt_access_token']
+    jwt_refresh_token = body['jwt_refresh_token']
 
-    if verify_jwt(access_token): # jwt가 유효하다면 해당 유저를 인증 처리 한다(?)
-        # token = AccessToken(access_token)
+    if verify_jwt(jwt_access_token): # jwt가 유효하다면 해당 유저를 인증 처리 한다(?)
+        # token = AccessToken(jwt_access_token)
         # user = User.objects.get(token['user_id'])
-        return Response(status=status.HTTP_200_OK)
+        return JsonResponse(status=status.HTTP_200_OK)
 
-    data = {'refresh': refresh_token}
+    data = {'refresh': jwt_refresh_token}
     result = requests.POST(JWT_REFRESH_URL, data).json() # jwt가 무효하다면 refresh token을 이용해 access token 재발급
 
     if result == status.HTTP_401_UNAUTHORIZED: # refresh token도 만료됬다면 소셜로그인 재유도
         error = "소셜로그인을 해주세요"
-        return Response(data = error, status=status.HTTP_401_UNAUTHORIZED)
+        return JsonResponse(data = error, status=status.HTTP_401_UNAUTHORIZED)
     
-    new_access_token = result['access']
-    return Response(data = new_access_token, status=status.HTTP_201_CREATED) # 새 access token 반환
+    new_jwt_access_token = result['access']
+    return JsonResponse(data = new_jwt_access_token, status=status.HTTP_201_CREATED) # 새 access token 반환
     
 
 @csrf_exempt
