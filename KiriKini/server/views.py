@@ -18,7 +18,7 @@ from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from rest_auth.registration.views import SocialLoginView
 
 from .serializers import MealSerializer, UserSerializer
-from .models import Meal
+from .models import Meal,User
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -145,36 +145,77 @@ def facebook_login(request):
         }
         user_fb_data = requests.get("https://graph.facebook.com/me", params=params_user).json()
         user_email = user_fb_data['email']
+        user = UserSerializer(data=user_data, partial=True)
+        if user.is_valid():
+            user.save()
+            print("user created")
+        else:
+            print("error", user.errors)
 
-        user = User.objects.filter(email=user_email)
-        if not user:
-            user_data = {
-                'email': user_email,
-                'username': user_email,
-                'password': access_token[0:10],
-                'accessToken': access_token,
-                # 'refreshToken': refresh_token,
-            }
-            user = UserSerializer(data=user_data, partial=True)
-            if user.is_valid():
-                user.save()
-                print("user created")
-            else:
-                print("error", user.errors)
+    jwt_data = {
+        'email': user_email,
+        'password': access_token[0:10]
+    }
+    jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
+    access_token = jwt['access']
+    refresh_token = jwt['refresh']
+    data = {
+        'access_token': access_token,
+        'refresh_token': refresh_token
+    }
+    return Response(data, status=status.HTTP_201_CREATED)
 
-        jwt_data = {
-            'email': user_email,
-            'password': access_token[0:10]
-        }
-        jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
-        print("jwt: ", jwt)
-        access_token = jwt['access']
-        refresh_token = jwt['refresh']
-        data = {
-            'jwt_access_token': access_token,
-            'jwt_refresh_token': refresh_token
-        }
-        return JsonResponse(data, status=status.HTTP_201_CREATED)
-    else:
-        data = {'error': '소셜로그인을 다시 진행해주세요.'}
-        return JsonResponse(data, status=status.HTTP_401_UNAUTHORIZED)
+  
+
+@api_view(['GET'])
+def detail_user(request, pk):
+    # permissions = (permissions.IsAuthenticatedOrReadOnly,)
+    """
+    """
+    try:
+        users = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response(status=400)
+    if request.method == 'GET':
+        serializer = UserSerializer(meals)
+        return Response(serializer.data)
+
+
+@api_view(['GET','POST'])
+def create_meal(request):
+    """
+    """
+    if request.method == 'GET':
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer == MealSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+      
+@api_view(['GET','PUT','DELETE'])
+def detail_meal(request,pk):
+    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
+    """
+    """
+    try:
+        meals = Meal.objects.get(pk=pk)
+    except Meal.DoesNotExist:
+        return Response(status=400)
+    
+    if request.method == 'GET':
+        serializer = MealSerializer(meals)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = MealSerializer(meals, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    elif request.method == 'DELETE':
+        meals.delete()
+        return Response(status=204)
