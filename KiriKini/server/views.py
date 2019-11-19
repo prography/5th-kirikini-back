@@ -212,7 +212,7 @@ def create_meal(request):
         serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer == MealSerializer(data=request.data)
+        serializer = MealSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)

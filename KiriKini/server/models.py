@@ -67,8 +67,6 @@ class MealRate(models.Model):
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
 	mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
 
-	def __str__(self):
-		return self.name
 
 
 class Report(models.Model):
@@ -77,9 +75,6 @@ class Report(models.Model):
 	feedback = models.TextField()
 	analysis = models.TextField()
 	createdAt = models.DateField(auto_now_add=True)
-
-	def __str__(self):
-		return self.name
 
 
 # class Comment(models.Model):
