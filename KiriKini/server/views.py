@@ -171,19 +171,35 @@ def facebook_login(request):
 def detail_user(request, pk):
     # permissions = (permissions.IsAuthenticatedOrReadOnly,)
     """
+    user보기
     """
     try:
         users = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=400)
     if request.method == 'GET':
-        serializer = UserSerializer(meals)
+        serializer = UserSerializer(users)
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def detail_user_meal(request,pk):
+    """
+    해당 user의 식사 데이터 전체 보기
+    """
+    try:
+        users = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response(status=400)
+    if request.method == 'GET':
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
 
 
 @api_view(['GET','POST'])
 def create_meal(request):
     """
+    음식생성, 보기
     """
     if request.method == 'GET':
         meals = Meal.objects.all()
@@ -201,6 +217,7 @@ def create_meal(request):
 def detail_meal(request,pk):
     # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
+    수정,삭제
     """
     try:
         meals = Meal.objects.get(pk=pk)
