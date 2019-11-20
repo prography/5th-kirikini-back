@@ -20,6 +20,8 @@ from rest_auth.registration.views import SocialLoginView
 from .serializers import MealSerializer, UserSerializer
 from .models import Meal,User
 from django.contrib.auth import get_user_model
+
+
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
@@ -171,7 +173,6 @@ def facebook_login(request):
 def detail_user(request, pk):
     # permissions = (permissions.IsAuthenticatedOrReadOnly,)
     """
-    user보기
     """
     try:
         users = User.objects.get(pk=pk)
@@ -181,32 +182,17 @@ def detail_user(request, pk):
         serializer = UserSerializer(users)
         return Response(serializer.data)
 
-@api_view(['GET'])
-def detail_user_meal(request,pk):
-    """
-    해당 user의 식사 데이터 전체 보기
-    """
-    try:
-        users = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response(status=400)
-    if request.method == 'GET':
-        meals = Meal.objects.all()
-        serializer = MealSerializer(meals, many=True)
-        return Response(serializer.data)
-
 
 @api_view(['GET','POST'])
 def create_meal(request):
     """
-    음식생성, 보기
     """
     if request.method == 'GET':
         meals = Meal.objects.all()
         serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer == MealSerializer(data=request.data)
+        serializer = MealSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
@@ -217,7 +203,6 @@ def create_meal(request):
 def detail_meal(request,pk):
     # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
-    수정,삭제
     """
     try:
         meals = Meal.objects.get(pk=pk)
@@ -237,22 +222,13 @@ def detail_meal(request,pk):
         meals.delete()
         return Response(status=204)
 
-@api_view(['GET','POST'])
-def mealrate(request,pk):
-    """
-    음식평가 생성, 보기
-    """
+@api_view(['GET'])
+def detail_user_meal(request,pk):
     try:
         users = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=400)
     if request.method == 'GET':
-        mealrate = MealRate.objects.all()
-        serializer = MealRateSerializer(mealrate, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer == MealRateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
+    return Response(serializer.data)
