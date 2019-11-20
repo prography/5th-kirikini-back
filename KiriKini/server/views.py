@@ -236,3 +236,23 @@ def detail_meal(request,pk):
     elif request.method == 'DELETE':
         meals.delete()
         return Response(status=204)
+
+@api_view(['GET','POST'])
+def mealrate(request,pk):
+    """
+    음식평가 생성, 보기
+    """
+    try:
+        users = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response(status=400)
+    if request.method == 'GET':
+        mealrate = MealRate.objects.all()
+        serializer = MealRateSerializer(mealrate, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer == MealRateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
