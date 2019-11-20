@@ -190,7 +190,7 @@ def create_meal(request):
         serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer == MealSerializer(data=request.data)
+        serializer = MealSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
@@ -219,3 +219,22 @@ def detail_meal(request,pk):
     elif request.method == 'DELETE':
         meals.delete()
         return Response(status=204)
+    
+@api_view(['GET'])
+def mealrate(request,pk):
+    try:
+        meals = Meal.objects.get(pk=pk)
+    except Meal.DoesNotExist:
+        return Response(status=400)
+    if request.method == 'GET':
+        mealrates = MealRate.objects.get(pk=pk)
+        serializer = MealRateSerializer(mealrates)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = MealRateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+        
