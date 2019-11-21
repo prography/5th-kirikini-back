@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Meal
+from .models import Meal, MealRate, Report
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -20,5 +20,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'username', 'refreshToken', 'password')
         extra_kwargs = {'password': {'write_only': True}}
+
+
+class MealRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealRate
+        fields = '__all__'
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
 
     

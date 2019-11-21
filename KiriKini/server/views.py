@@ -17,8 +17,8 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from rest_auth.registration.views import SocialLoginView
 
-from .serializers import MealSerializer, UserSerializer
-from .models import Meal,User
+from .serializers import MealSerializer, UserSerializer, MealRateSerializer, ReportSerializer
+from .models import Meal,User,MealRate,Report
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -168,22 +168,24 @@ def facebook_login(request):
   
 
 @api_view(['GET'])
-def detail_user(request, pk):
-    # permissions = (permissions.IsAuthenticatedOrReadOnly,)
+def detail_usermeal(request, pk):
     """
+    특정user가 생성한 meal보기
     """
     try:
         users = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=400)
     if request.method == 'GET':
-        serializer = UserSerializer(meals)
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
 
 
 @api_view(['GET','POST'])
 def create_meal(request):
     """
+    meal생성,보기
     """
     if request.method == 'GET':
         meals = Meal.objects.all()
@@ -199,7 +201,6 @@ def create_meal(request):
       
 @api_view(['GET','PUT','DELETE'])
 def detail_meal(request,pk):
-    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
     """
     try:
@@ -219,3 +220,31 @@ def detail_meal(request,pk):
     elif request.method == 'DELETE':
         meals.delete()
         return Response(status=204)
+
+
+@api_view(['GET'])
+def detail_report(request,pk):
+    """
+    특정 report 보기
+    """
+    try:
+        reports = Report.objects.get(pk=pk)
+    except Report.DoesNotExist:
+        return Response(status=400)
+    
+    if request.method == 'GET':
+        serializer = ReportSerializer(reports)
+        return Response(serializer.data)
+
+
+@api_view(['POST'])
+def create_report(request):
+    """
+    report 생성
+    """
+    if request.method == 'POST':
+        serializer = ReportSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
