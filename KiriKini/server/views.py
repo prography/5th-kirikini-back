@@ -17,8 +17,8 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from rest_auth.registration.views import SocialLoginView
 
-from .serializers import MealSerializer, UserSerializer
-from .models import Meal,User
+from .serializers import MealSerializer, UserSerializer, MealRateSerializer
+from .models import Meal,User,MealRate
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -169,7 +169,6 @@ def facebook_login(request):
 
 @api_view(['GET'])
 def detail_usermeal(request, pk):
-    # permissions = (permissions.IsAuthenticatedOrReadOnly,)
     """
     특정user가 생성한 meal보기
     """
@@ -202,7 +201,6 @@ def create_meal(request):
       
 @api_view(['GET','PUT','DELETE'])
 def detail_meal(request,pk):
-    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
     생성된 특정 meal 보기,수정,삭제
     """
@@ -227,7 +225,6 @@ def detail_meal(request,pk):
       
 @api_view(['GET','POST'])
 def mealrate(request,pk):
-    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
     해당 mealId의 건강도 평가
     """
@@ -237,14 +234,12 @@ def mealrate(request,pk):
         return Response(status=400)
     if request.method == 'GET':
         mealrates = MealRate.objects.all()
-        serializer = MealRateSerializer(mealrates)
+        serializer = MealRateSerializer(mealrates, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer = MealRateSerializer(mealrates, data=request.data)
+        serializer = MealRateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-
-
     
