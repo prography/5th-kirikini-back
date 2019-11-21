@@ -58,10 +58,6 @@ class Meal(models.Model):
 	userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	# commentId = models.ForeignKey('Comment', on_delete=models.CASCADE)
 
-	def __str__(self):
-		return self.name
-
-
 class MealRate(models.Model):
 	userId = models.ForeignKey('User', on_delete=models.CASCADE)
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
