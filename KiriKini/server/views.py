@@ -199,49 +199,28 @@ def create_meal(request):
         return Response(serializer.errors, status=400)
 
       
-# @api_view(['GET','PUT','DELETE'])
-# def detail_meal(request,pk):
-#     """
-#     생성된 특정 meal 보기,수정,삭제
-#     """
-#     try:
-#         meals = Meal.objects.get(pk=pk)
-#     except Meal.DoesNotExist:
-#         return Response(status=400)
+@api_view(['GET','PUT','DELETE'])
+def detail_meal(request,pk):
+    """
+    """
+    try:
+        meals = Meal.objects.get(pk=pk)
+    except Meal.DoesNotExist:
+        return Response(status=400)
     
-#     if request.method == 'GET':
-#         serializer = MealSerializer(meals)
-#         return Response(serializer.data)
-#     elif request.method == 'PUT':
-#         serializer = MealSerializer(meals, data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data)
-#         return Response(serializer.errors, status=400)
-#     elif request.method == 'DELETE':
-#         meals.delete()
-#         return Response(status=204)
+    if request.method == 'GET':
+        serializer = MealSerializer(meals)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = MealSerializer(meals, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    elif request.method == 'DELETE':
+        meals.delete()
+        return Response(status=204)
 
-      
-# @api_view(['GET','POST'])
-# def mealrate(request,pk):
-#     """
-#     해당 mealId의 건강도 평가
-#     """
-#     try:
-#         meals = Meal.objects.get(pk=pk)
-#     except Meal.DoesNotExist:
-#         return Response(status=400)
-#     if request.method == 'GET':
-#         mealrates = MealRate.objects.all()
-#         serializer = MealRateSerializer(mealrates, many=True)
-#         return Response(serializer.data)
-#     elif request.method == 'POST':
-#         serializer = MealRateSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=201)
-#         return Response(serializer.errors, status=400)
 
 @api_view(['GET'])
 def detail_report(request,pk):
