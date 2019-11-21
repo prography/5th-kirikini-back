@@ -32,20 +32,12 @@ FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
 JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify'
-JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh'
+JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
     return render(request, 'index.html')
-
-
-def verify_jwt(jwt):
-    data = {'token': jwt}
-    jwt_ok = requests.request('POST', JWT_VERIFY_URL, data).json()['status']
-    if jwt_ok == status.HTTP_200_OK:
-        return True
-    return False
 
 
 @csrf_exempt
@@ -55,10 +47,10 @@ def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     jwt_access_token = body['jwt_access_token']
     jwt_refresh_token = body['jwt_refresh_token']
 
-    if verify_jwt(jwt_access_token): # jwt가 유효하다면 해당 유저를 인증 처리 한다(?)
-        # token = AccessToken(jwt_access_token)
-        # user = User.objects.get(token['user_id'])
-        return JsonResponse(status=status.HTTP_200_OK)
+    data = {'token': jwt_access_token[0]}
+    jwt_ok = requests.post(JWT_VERIFY_URL, data)
+    if jwt_ok.status_code == status.HTTP_200_OK:
+        return JsonResponse(data = {}, status=status.HTTP_200_OK)
 
     data = {'refresh': jwt_refresh_token}
     result = requests.POST(JWT_REFRESH_URL, data).json() # jwt가 무효하다면 refresh token을 이용해 access token 재발급
@@ -74,7 +66,8 @@ def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     body = dict(request.POST)
-    print(body)
+    # print(body)
+    print(dict(request.GET))
     access_token = body['access_token'][0]
     refresh_token = body['refresh_token'][0]
 
