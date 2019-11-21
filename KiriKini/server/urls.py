@@ -14,7 +14,6 @@ urlpatterns = [
     path('meal/',views.create_meal),
     path('meal/<int:pk>',views.detail_meal),
     path('meal/user/<int:pk>',views.detail_usermeal),
-    path('mealrate/<int:pk>',views.mealrate),
     path('report/<int:pk>',views.detail_report),
     path('report/',views.create_report),
     # path('accounts/kakao/login/callback', views.login_preprocess),
