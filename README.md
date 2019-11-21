@@ -23,6 +23,16 @@ git pull
 pip install -r requirements.txt
 ```
 
+- 변경사항 확인하면서 push하기
+```
+git add -p
+
+hunk단위로 추가할지 정하기
+y : 해당 hunk를 스테이징
+n : 추가하지않기
+q : 종료
+```
+
 - 버전
 
 Python3.7.1
