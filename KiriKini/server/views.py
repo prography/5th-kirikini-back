@@ -168,22 +168,25 @@ def facebook_login(request):
   
 
 @api_view(['GET'])
-def detail_user(request, pk):
+def detail_usermeal(request, pk):
     # permissions = (permissions.IsAuthenticatedOrReadOnly,)
     """
+    특정user가 생성한 meal보기
     """
     try:
         users = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=400)
     if request.method == 'GET':
-        serializer = UserSerializer(meals)
+        meals = Meal.objects.all()
+        serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
 
 
 @api_view(['GET','POST'])
 def create_meal(request):
     """
+    meal생성,보기
     """
     if request.method == 'GET':
         meals = Meal.objects.all()
@@ -201,6 +204,7 @@ def create_meal(request):
 def detail_meal(request,pk):
     # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
+    생성된 특정 meal 보기,수정,삭제
     """
     try:
         meals = Meal.objects.get(pk=pk)
@@ -219,22 +223,28 @@ def detail_meal(request,pk):
     elif request.method == 'DELETE':
         meals.delete()
         return Response(status=204)
-    
-@api_view(['GET'])
+
+      
+@api_view(['GET','POST'])
 def mealrate(request,pk):
+    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
+    """
+    해당 mealId의 건강도 평가
+    """
     try:
         meals = Meal.objects.get(pk=pk)
     except Meal.DoesNotExist:
         return Response(status=400)
     if request.method == 'GET':
-        mealrates = MealRate.objects.get(pk=pk)
+        mealrates = MealRate.objects.all()
         serializer = MealRateSerializer(mealrates)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer = MealRateSerializer(data=request.data)
+        serializer = MealRateSerializer(mealrates, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
+            return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
-        
+
+    
