@@ -246,7 +246,7 @@ def mealrate(request,pk):
 @api_view(['GET'])
 def detail_report(request,pk):
     """
-    생성된 특정 meal 보기,수정,삭제
+    특정 report 보기
     """
     try:
         reports = Report.objects.get(pk=pk)
@@ -260,6 +260,9 @@ def detail_report(request,pk):
 
 @api_view(['POST'])
 def create_report(request):
+    """
+    report 생성
+    """
     if request.method == 'POST':
         serializer = ReportSerializer(data=request.data)
         if serializer.is_valid():
