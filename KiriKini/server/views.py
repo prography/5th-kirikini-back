@@ -43,33 +43,47 @@ def index(request):
 @csrf_exempt
 def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     body = dict(request.POST) # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
-    print(body)
-    jwt_access_token = body['jwt_access_token']
-    jwt_refresh_token = body['jwt_refresh_token']
+    token = None
+    for t in body.keys():
+        token = t
 
-    data = {'token': jwt_access_token[0]}
+    token = json.loads(token)
+    jwt_access_token = token['jwt_access_token']
+    jwt_refresh_token = token['jwt_refresh_token']
+    print("jwt_access:", jwt_access_token)
+    print("jwt_refresh:", jwt_refresh_token)
+
+
+    data = {'token': jwt_access_token}
     jwt_ok = requests.post(JWT_VERIFY_URL, data)
+    print("jwt_ok:", jwt_ok)
     if jwt_ok.status_code == status.HTTP_200_OK:
         return JsonResponse(data = {}, status=status.HTTP_200_OK)
 
     data = {'refresh': jwt_refresh_token}
-    result = requests.POST(JWT_REFRESH_URL, data).json() # jwt가 무효하다면 refresh token을 이용해 access token 재발급
+    result = requests.post(JWT_REFRESH_URL, data) # jwt가 무효하다면 refresh token을 이용해 access token 재발급
+    print("result: ", result.json())
 
-    if result == status.HTTP_401_UNAUTHORIZED: # refresh token도 만료됬다면 소셜로그인 재유도
+    if result.status_code == status.HTTP_401_UNAUTHORIZED: # refresh token도 만료됬다면 소셜로그인 재유도
         error = "소셜로그인을 해주세요"
         return JsonResponse(data = error, status=status.HTTP_401_UNAUTHORIZED)
-    
-    new_jwt_access_token = result['access']
-    return JsonResponse(data = new_jwt_access_token, status=status.HTTP_201_CREATED) # 새 access token 반환
+    else:
+        new_jwt_access_token = result.json()['access']
+        print("new jwt:", new_jwt_access_token)
+        return JsonResponse(data = new_jwt_access_token, status=status.HTTP_201_CREATED, safe=False) # 새 access token 반환
     
 
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     body = dict(request.POST)
-    # print(body)
-    print(dict(request.GET))
-    access_token = body['access_token'][0]
-    refresh_token = body['refresh_token'][0]
+    token = None
+    for t in body.keys():
+        token = t
+
+    token = json.loads(token)
+    print("token:", token)
+    access_token = token['access_token']
+    refresh_token = token['refresh_token']
 
     headers = {
         'Authorization': f'Bearer {access_token}',
@@ -89,7 +103,7 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
                 'email': user_email,
                 'username': user_email,
                 'accessToken': access_token,
-                'refreshToken': refresh_token,
+                # 'refreshToken': refresh_token,
                 'password': access_token[:10]
             }
             user = UserSerializer(data=user_data, partial=True)
