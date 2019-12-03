@@ -48,7 +48,7 @@ class User(AbstractBaseUser):
 	@property
 	def is_staff(self):
 		return self.is_admin
-
+		
 
 class Meal(models.Model):	
 	countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 끼니, 1: 간식
