@@ -23,20 +23,25 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REST_API = 'http://localhost:8000/rest-auth/kakao/?method=oauth2'
-KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
+# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
 FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
+
+
     return render(request, 'index.html')
 
 
@@ -44,6 +49,7 @@ def index(request):
 def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     body = dict(request.POST) # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
     token = None
+
     for t in body.keys():
         token = t
 
@@ -76,6 +82,7 @@ def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     body = dict(request.POST)
+    print(body)
     token = None
     for t in body.keys():
         token = t
