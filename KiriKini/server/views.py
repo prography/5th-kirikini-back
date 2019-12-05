@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import json, requests
+from dateutil import parser
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
@@ -208,11 +209,15 @@ def create_meal(request):
         for t in body.keys():
             body = json.loads(t)
 
+        print("body: ", body)
+        print("time: ", body['created_at'])
+
         meal_data = {
             'user': request.user.id,
             'mealType': body['mealType'],
             'gihoType': body['gihoType'],
             'picURL': body['picURL'],
+            'created_at': parser.parse(body['created_at'])
         }
         print("meal_data ", meal_data)
 
