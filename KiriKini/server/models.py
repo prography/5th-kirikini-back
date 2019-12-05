@@ -51,7 +51,7 @@ class User(AbstractBaseUser):
 		
 
 class Meal(models.Model):	
-	countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 끼니, 1: 간식
+	# countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 끼니, 1: 간식
 	mealType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(3)])  # 0: 집밥, 1: 외식, 2:배달, 3:간편식
 	gihoType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 커피, 1: 술
 	picURL = models.CharField(max_length=255)
@@ -64,7 +64,6 @@ class MealRate(models.Model):
 	user = models.ForeignKey('User', on_delete=models.CASCADE)
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
 	meal = models.ForeignKey('Meal', on_delete=models.CASCADE)
-
 
 
 class Report(models.Model):

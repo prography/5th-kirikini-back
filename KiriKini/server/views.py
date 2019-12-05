@@ -209,8 +209,7 @@ def create_meal(request):
             body = json.loads(t)
 
         meal_data = {
-            'userId': request.user.id,
-            'countType': body['countType'],
+            'user': request.user.id,
             'mealType': body['mealType'],
             'gihoType': body['gihoType'],
             'picURL': body['picURL'],
@@ -223,8 +222,8 @@ def create_meal(request):
 
             meal_id = Meal.objects.latest('id').id
             meal_rate_data = {
-                'userId': request.user.id,
-                'mealId': meal_id,
+                'user': request.user.id,
+                'meal': meal_id,
                 'rating': body['rating']
             }
             meal_rate_serializer = MealRateSerializer(data=meal_rate_data)
@@ -265,7 +264,7 @@ def detail_meal(request,pk):
 
 @api_view(['GET'])
 def load_today_meal(request):
-    print("user id: ",request.user.id)
+    user_id = request.user.id
 
-    meals = Meal.objects.filter(id=id, )
-    return Response(data, status=status.HTTP_200_OK)
+    meals = Meal.objects.filter(user=user_id, )
+    return Response(meals, status=status.HTTP_200_OK)
