@@ -14,9 +14,4 @@ urlpatterns = [
     path('meal/',views.create_meal),
     path('meal/<int:pk>',views.detail_meal),
     path('meal/user/<int:pk>',views.detail_user),
-    # path('accounts/kakao/login/callback', views.login_preprocess),
-    # path('accounts/facebook/login/callback', views.login),
-    # path('docs/', get_swagger_view(title="API 문서"), name="swagger"),
-    # path('rest-auth/facebook/', views.FacebookLogin.as_view(), name='fb_login'),
-    # path('rest-auth/kakao/', views.KakaoLogin.as_view(), name='kakao_login'),
 ]

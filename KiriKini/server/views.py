@@ -17,31 +17,29 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from rest_auth.registration.views import SocialLoginView
 
-from .serializers import MealSerializer, UserSerializer
-from .models import Meal,User
+from .serializers import MealSerializer, UserSerializer, MealRateSerializer
+from .models import Meal, User, MealRate
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
-# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+# KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
+KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
 FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
-# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
-
-
     return render(request, 'index.html')
 
 
@@ -199,16 +197,46 @@ def detail_user(request, pk):
 def create_meal(request):
     """
     """
+    print("user id: ",request.user.id)
+
     if request.method == 'GET':
         meals = Meal.objects.all()
         serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer = MealSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        body = dict(request.POST)
+        for t in body.keys():
+            body = json.loads(t)
+
+        meal_data = {
+            'userId': request.user.id,
+            'countType': body['countType'],
+            'mealType': body['mealType'],
+            'gihoType': body['gihoType'],
+            'picURL': body['picURL'],
+        }
+        print("meal_data ", meal_data)
+
+        meal_serializer = MealSerializer(data=meal_data)
+        if meal_serializer.is_valid():
+            meal_serializer.save()
+
+            meal_id = Meal.objects.latest('id').id
+            meal_rate_data = {
+                'userId': request.user.id,
+                'mealId': meal_id,
+                'rating': body['rating']
+            }
+            meal_rate_serializer = MealRateSerializer(data=meal_rate_data)
+            if meal_rate_serializer.is_valid():
+                meal_rate_serializer.save()
+                return Response(status=status.HTTP_201_CREATED)
+            else:
+                print("error: ", meal_rate_serializer.errors)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print("error: ", meal_serializer.errors)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
       
 @api_view(['GET','PUT','DELETE'])
