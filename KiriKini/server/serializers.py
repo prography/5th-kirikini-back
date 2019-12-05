@@ -6,13 +6,13 @@ User = get_user_model()
 class MealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meal
-        fields = ('countType', 'mealType', 'gihoType', 'picURL', 'userId')
+        fields = ('countType', 'mealType', 'gihoType', 'picURL', 'user')
 
 
 class MealRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MealRate
-        fields = ('userId', 'rating', 'mealId')
+        fields = ('user', 'rating', 'meal')
 
 
 class UserSerializer(serializers.ModelSerializer):

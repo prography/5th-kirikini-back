@@ -261,3 +261,11 @@ def detail_meal(request,pk):
     elif request.method == 'DELETE':
         meals.delete()
         return Response(status=204)
+
+
+@api_view(['GET'])
+def load_today_meal(request):
+    print("user id: ",request.user.id)
+
+    meals = Meal.objects.filter(id=id, )
+    return Response(data, status=status.HTTP_200_OK)

@@ -13,5 +13,6 @@ urlpatterns = [
     path('auto_login', views.auto_login, name='auto_login'),
     path('meal/',views.create_meal),
     path('meal/<int:pk>',views.detail_meal),
+    path('meal/today',views.load_today_meal),
     path('meal/user/<int:pk>',views.detail_user),
 ]
