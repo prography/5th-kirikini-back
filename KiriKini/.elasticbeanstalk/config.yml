@@ -1,0 +1,24 @@
+branch-defaults:
+  develop:
+    environment: kirikini-dev
+  feature/1003:
+    environment: kirikini-dev
+    group_suffix: null
+environment-defaults:
+  kirikini-dev:
+    branch: null
+    repository: null
+global:
+  application_name: kirikini
+  branch: null
+  default_ec2_keyname: kirikini
+  default_platform: python-3.6
+  default_region: ap-northeast-2
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: null
+  repository: null
+  sc: git
+  workspace_type: Application

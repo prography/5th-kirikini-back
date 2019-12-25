@@ -57,6 +57,7 @@ class Meal(models.Model):
 	picURL = models.CharField(max_length=255)
 	user = models.ForeignKey('User', on_delete=models.CASCADE)
 	created_at = models.DateTimeField(blank=True, null=True)
+	average_rate = models.IntegerField(blank=True, null=True)
 	# comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
 	
 

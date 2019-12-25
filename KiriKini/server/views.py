@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import json, requests
+import json
+import requests
 from dateutil import parser
+import calendar
+import datetime
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
+from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -45,8 +50,16 @@ def index(request):
 
 
 @csrf_exempt
-def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
-    body = dict(request.POST) # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
+def email_login(request):
+    body = dict(request.POST)
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@csrf_exempt
+def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
+    # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
+    body = dict(request.POST)
     token = None
 
     for t in body.keys():
@@ -58,25 +71,26 @@ def auto_login(request): # 앱에서 jwt가 있으면 자동로그인한다
     print("jwt_access:", jwt_access_token)
     print("jwt_refresh:", jwt_refresh_token)
 
-
     data = {'token': jwt_access_token}
     jwt_ok = requests.post(JWT_VERIFY_URL, data)
     print("jwt_ok:", jwt_ok)
     if jwt_ok.status_code == status.HTTP_200_OK:
-        return JsonResponse(data = {}, status=status.HTTP_200_OK)
+        return JsonResponse(data, status=status.HTTP_200_OK)
 
     data = {'refresh': jwt_refresh_token}
-    result = requests.post(JWT_REFRESH_URL, data) # jwt가 무효하다면 refresh token을 이용해 access token 재발급
+    # jwt가 무효하다면 refresh token을 이용해 access token 재발급
+    result = requests.post(JWT_REFRESH_URL, data)
     print("result: ", result.json())
 
-    if result.status_code == status.HTTP_401_UNAUTHORIZED: # refresh token도 만료됬다면 소셜로그인 재유도
+    if result.status_code == status.HTTP_401_UNAUTHORIZED:  # refresh token도 만료됬다면 소셜로그인 재유도
         error = "소셜로그인을 해주세요"
-        return JsonResponse(data = error, status=status.HTTP_401_UNAUTHORIZED)
+        return JsonResponse(data=error, status=status.HTTP_401_UNAUTHORIZED)
     else:
         new_jwt_access_token = result.json()['access']
         print("new jwt:", new_jwt_access_token)
-        return JsonResponse(data = new_jwt_access_token, status=status.HTTP_201_CREATED, safe=False) # 새 access token 반환
-    
+        # 새 access token 반환
+        return JsonResponse(data=new_jwt_access_token, status=status.HTTP_201_CREATED, safe=False)
+
 
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
@@ -95,14 +109,18 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
         'Authorization': f'Bearer {access_token}',
         'Content-type': "application/x-www-form-urlencoded; charset=utf-8"
     }
-    validate_token = requests.get("https://kapi.kakao.com/v1/user/access_token_info", headers=headers)
+    validate_token = requests.get(
+        "https://kapi.kakao.com/v1/user/access_token_info", headers=headers)
     if validate_token.status_code == status.HTTP_200_OK:
         try:
-            user_email = requests.get("https://kapi.kakao.com/v2/user/me", headers=headers).json()['kakao_account']['email']
+            user_email = requests.get(
+                "https://kapi.kakao.com/v2/user/me", headers=headers).json()['kakao_account']['email']
         except KeyError:
-            result = requests.get(f"https://kapi.kakao.com/oauth/authorize?client_id={KAKAO_APP_ID}&redirect_uri={KAKAO_REDIRECT_URI}&response_type=code&scope=account_email").json()
-            user_email = requests.post("https://kapi.kakao.com/v2/user/me", headers=headers, data=data).json()['email']
-        
+            result = requests.get(
+                f"https://kapi.kakao.com/oauth/authorize?client_id={KAKAO_APP_ID}&redirect_uri={KAKAO_REDIRECT_URI}&response_type=code&scope=account_email").json()
+            user_email = requests.post(
+                "https://kapi.kakao.com/v2/user/me", headers=headers, data=data).json()['email']
+
         user = User.objects.filter(email=user_email)
         if not user:
             user_data = {
@@ -149,14 +167,16 @@ def facebook_login(request):
         "input_token": access_token,
         "access_token": f'{FACEBOOK_APP_ID}|{FACEBOOK_SECRET}'
     }
-    debug = requests.get("https://graph.facebook.com/debug_token", params=params_debug)
+    debug = requests.get(
+        "https://graph.facebook.com/debug_token", params=params_debug)
     if debug.status_code == status.HTTP_200_OK:
 
         params_user = {
             "fields": ["email"],
             "access_token": access_token
         }
-        user_fb_data = requests.get("https://graph.facebook.com/me", params=params_user).json()
+        user_fb_data = requests.get(
+            "https://graph.facebook.com/me", params=params_user).json()
         user_email = user_fb_data['email']
         user = UserSerializer(data=user_data, partial=True)
         if user.is_valid():
@@ -178,7 +198,6 @@ def facebook_login(request):
     }
     return Response(data, status=status.HTTP_201_CREATED)
 
-  
 
 @api_view(['GET'])
 def detail_user(request, pk):
@@ -194,12 +213,8 @@ def detail_user(request, pk):
         return Response(serializer.data)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def create_meal(request):
-    """
-    """
-    print("user id: ",request.user.id)
-
     if request.method == 'GET':
         meals = Meal.objects.all()
         serializer = MealSerializer(meals, many=True)
@@ -209,15 +224,14 @@ def create_meal(request):
         for t in body.keys():
             body = json.loads(t)
 
-        print("body: ", body)
-        print("time: ", body['created_at'])
-
         meal_data = {
             'user': request.user.id,
             'mealType': body['mealType'],
             'gihoType': body['gihoType'],
             'picURL': body['picURL'],
-            'created_at': parser.parse(body['created_at'])
+            'created_at': parser.parse(body['created_at']),
+            # todo: 지금은 테스트용으로 현재 점수만 받지만 나중에 평균점수 계산해주기
+            'average_rate': body['rating']
         }
         print("meal_data ", meal_data)
 
@@ -240,11 +254,12 @@ def create_meal(request):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
             print("error: ", meal_serializer.errors)
+
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-      
-@api_view(['GET','PUT','DELETE'])
-def detail_meal(request,pk):
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def detail_meal(request, pk):
     # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
     """
     """
@@ -252,7 +267,7 @@ def detail_meal(request,pk):
         meals = Meal.objects.get(pk=pk)
     except Meal.DoesNotExist:
         return Response(status=400)
-    
+
     if request.method == 'GET':
         serializer = MealSerializer(meals)
         return Response(serializer.data)
@@ -261,15 +276,115 @@ def detail_meal(request,pk):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
         meals.delete()
-        return Response(status=204)
+        return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 def load_today_meal(request):
     user_id = request.user.id
+    now = datetime.datetime.now()
+    date = now.strftime("%Y-%m-%d")
 
-    meals = Meal.objects.filter(user=user_id, )
-    return Response(meals, status=status.HTTP_200_OK)
+    meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    meals = list(meals.values())
+
+    return JsonResponse(meals, status=status.HTTP_200_OK, safe=False)
+
+
+@api_view(['GET', 'POST'])
+def load_month_meal(request):
+    def _get_week_of_month(date):
+        if type(date) == str:
+            date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+
+        cal_object = calendar.Calendar(0)
+        month_calendar_dates = cal_object.itermonthdates(date.year, date.month)
+        day_of_week = 1
+        week_number = 1
+
+        for day in month_calendar_dates:
+            if day_of_week > 7:
+                week_number += 1
+                day_of_week = 1
+            if date == day:
+                break
+            else:
+                day_of_week += 1
+
+        return week_number
+
+    body = dict(request.POST)
+    month = None
+
+    for t in body.keys():
+        month = json.loads(t)
+
+    user_id = request.user.id
+    now = datetime.datetime.now()
+    year = now.strftime("%Y")
+    date = year + '-' + str(month['month'])
+
+    meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    meals = list(meals.values())
+
+    meals_by_weeks = {
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+        5: []
+    }
+    for meal in meals:
+        week = _get_week_of_month(meal['created_at'])-1
+        meal['day'] = meal['created_at'].weekday()
+        meals_by_weeks[week].append(meal)
+
+    return JsonResponse(meals_by_weeks, status=status.HTTP_200_OK, safe=False)
+
+
+@api_view(['GET', 'POST'])
+def rate_meal(request):
+    user_id = request.user.id
+
+    if request.method == 'GET':
+        mealrates = MealRate.objects.filter(~Q(user=user_id))
+        mealrates = list(mealrates.values())
+
+        meals_not_rated = list()
+        for mealrate in mealrates:
+            meals_not_rated.append(mealrate.meal)
+
+        meals_not_rated = Meal.objects.filter(id__in=meals_not_rated)
+        print("meals_not_rated:", meals_not_rated)
+        meals_not_rated = list(meals_not_rated.values())
+
+        return JsonResponse(meals_not_rated, status=status.HTTP_200_OK, safe=False)
+
+    elif request.method == 'POST':  # todo
+        body = dict(request.POST)
+        for t in body.keys():
+            body = json.loads(t)
+
+        meal_to_rate = {
+            'user': user_id,
+            'meal': body['meal'],
+            'rating': body['rating']
+        }
+
+        meal_rate_serializer = MealRateSerializer(data=meal_to_rate)
+        if meal_rate_serializer.is_valid():
+            meal_rate_serializer.save()
+
+            meal = Meal.objects.filter(meal=body['meal'])
+            rate_counts = MealRate.objects.filter(meal=body['meal']).length
+
+            meal.average_rate = (meal.average_rate + rating) / rate_counts
+            Meal.objects.update(meal)
+
+            return Response(status=status.HTTP_200_OK)
+        else:
+            print("error: ", meal_rate_serializer.errors)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
