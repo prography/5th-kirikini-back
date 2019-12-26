@@ -29,20 +29,20 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-# KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
-KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
+# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
 FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-# JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
-# JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
-# JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
-JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
@@ -95,13 +95,11 @@ def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     body = dict(request.POST)
-    print(body)
     token = None
     for t in body.keys():
         token = t
 
     token = json.loads(token)
-    print("token:", token)
     access_token = token['access_token']
     refresh_token = token['refresh_token']
 
@@ -110,7 +108,9 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
         'Content-type': "application/x-www-form-urlencoded; charset=utf-8"
     }
     validate_token = requests.get(
-        "https://kapi.kakao.com/v1/user/access_token_info", headers=headers)
+        "https://kapi.kakao.com/v1/user/access_token_info",
+        headers=headers
+    )
     if validate_token.status_code == status.HTTP_200_OK:
         try:
             user_email = requests.get(
@@ -128,7 +128,8 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
                 'username': user_email,
                 'accessToken': access_token,
                 # 'refreshToken': refresh_token,
-                'password': access_token[:10]
+                # 'password': access_token[:10]
+                'password': user_email
             }
             user = UserSerializer(data=user_data, partial=True)
             if user.is_valid():
@@ -139,7 +140,7 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
 
         jwt_data = {
             'email': user_email,
-            'password': access_token[:10]
+            'password': user_email
         }
         jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
         print("jwt ", jwt)
@@ -349,7 +350,7 @@ def load_month_meal(request):
 def rate_meal(request):
     user_id = request.user.id
 
-    if request.method == 'GET':
+    if request.method == 'GET':  # 채점할 끼니를 불러온다
         mealrates = MealRate.objects.filter(~Q(user=user_id))
         mealrates = list(mealrates.values())
 
@@ -363,7 +364,7 @@ def rate_meal(request):
 
         return JsonResponse(meals_not_rated, status=status.HTTP_200_OK, safe=False)
 
-    elif request.method == 'POST':  # todo
+    elif request.method == 'POST':  # todo: 끼니 채점 정보를 앱으로부터 받아온다
         body = dict(request.POST)
         for t in body.keys():
             body = json.loads(t)
