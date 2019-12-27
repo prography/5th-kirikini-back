@@ -7,6 +7,7 @@ router = routers.DefaultRouter()
 # router.register(r'get_meal_list', views.get_meal_list)
 urlpatterns = [
     path('', views.index, name='index'),
+    path('privacy/', views.privacy, name='privacy'),
     path('api/', include('rest_framework.urls')),
     path('kakao_login', views.kakao_login, name='kakao_login'),
     path('facebook_login', views.facebook_login, name='facebook_login'),

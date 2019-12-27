@@ -29,7 +29,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/kakao_login"
+KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/kakao_login"
 # KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
@@ -37,9 +37,9 @@ FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:80/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/refresh/'
 # JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
 # JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
 # JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
@@ -47,6 +47,10 @@ JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com:8
 
 def index(request):
     return render(request, 'index.html')
+
+
+def privacy(request):
+    return render(request, 'privacy.html')
 
 
 @csrf_exempt
