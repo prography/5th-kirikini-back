@@ -10,7 +10,6 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -72,13 +71,20 @@ def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
     token = json.loads(token)
     jwt_access_token = token['jwt_access_token']
     jwt_refresh_token = token['jwt_refresh_token']
+    email = token['email']
     print("jwt_access:", jwt_access_token)
     print("jwt_refresh:", jwt_refresh_token)
+    print("email:", email)
 
     data = {'token': jwt_access_token}
     jwt_ok = requests.post(JWT_VERIFY_URL, data)
     print("jwt_ok:", jwt_ok)
     if jwt_ok.status_code == status.HTTP_200_OK:
+        user = User.objects.filter(email=email)
+        if not user:
+            error = "소셜로그인을 해주세요"
+            return JsonResponse(data=error, status=status.HTTP_401_UNAUTHORIZED, safe=False)
+
         return JsonResponse(data, status=status.HTTP_200_OK)
 
     data = {'refresh': jwt_refresh_token}
@@ -355,15 +361,19 @@ def rate_meal(request):
     user_id = request.user.id
 
     if request.method == 'GET':  # 채점할 끼니를 불러온다
-        mealrates = MealRate.objects.filter(~Q(user=user_id))
-        mealrates = list(mealrates.values())
+        my_mealrates = MealRate.objects.filter(user_id=user_id)
+        mealrates = MealRate.objects.all().exclude(user_id=user_id)
+
+        meals_rated = list()
+        for mealrate in my_mealrates:
+            meals_rated.append(mealrate.meal_id)
 
         meals_not_rated = list()
         for mealrate in mealrates:
-            meals_not_rated.append(mealrate.meal)
+            if mealrate.meal_id not in meals_rated:
+                meals_not_rated.append(mealrate.meal_id)
 
         meals_not_rated = Meal.objects.filter(id__in=meals_not_rated)
-        print("meals_not_rated:", meals_not_rated)
         meals_not_rated = list(meals_not_rated.values())
 
         return JsonResponse(meals_not_rated, status=status.HTTP_200_OK, safe=False)
@@ -382,14 +392,15 @@ def rate_meal(request):
         meal_rate_serializer = MealRateSerializer(data=meal_to_rate)
         if meal_rate_serializer.is_valid():
             meal_rate_serializer.save()
+            meal = Meal.objects.get(id=body['meal'])
+            rate_counts = MealRate.objects.filter(
+                meal_id=body['meal']).count() - 1
 
-            meal = Meal.objects.filter(meal=body['meal'])
-            rate_counts = MealRate.objects.filter(meal=body['meal']).length
-
-            meal.average_rate = (meal.average_rate + rating) / rate_counts
-            Meal.objects.update(meal)
-
+            meal.average_rate = (meal.average_rate +
+                                 body['rating']) / rate_counts
+            meal.save()
             return Response(status=status.HTTP_200_OK)
+
         else:
             print("error: ", meal_rate_serializer.errors)
             return Response(status=status.HTTP_400_BAD_REQUEST)

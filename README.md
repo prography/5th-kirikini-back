@@ -32,6 +32,8 @@ Python3.7.1
 ```
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 find . -path "*/migrations/*.pyc" -delete
+(in psql) drop database kirikini;
+(in psql) create database kirikini;
 python manage.py makemigrations
 python manage.py migrate
 ```
