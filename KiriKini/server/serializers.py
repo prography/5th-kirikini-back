@@ -1,12 +1,18 @@
 from rest_framework import serializers
-from .models import Meal
+from .models import Meal, MealRate
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class MealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meal
-        fields = ('countType', 'mealType', 'gihoType', 'picURL', 'userId')
+        fields = ('mealType', 'gihoType', 'picURL', 'user', 'created_at', 'average_rate')
+
+
+class MealRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealRate
+        fields = ('user', 'rating', 'meal')
 
 
 class UserSerializer(serializers.ModelSerializer):

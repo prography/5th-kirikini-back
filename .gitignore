@@ -227,3 +227,9 @@ venv/
 secrets.json
 
 # End of https://www.gitignore.io/api/macos,python,django,windows
+
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

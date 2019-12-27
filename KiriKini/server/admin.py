@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .forms import UserChangeForm, UserCreationForm
-from .models import User, Meal
+from .models import User, Meal, MealRate, Report
 
 
 class UserAdmin(BaseUserAdmin):
@@ -32,3 +32,5 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)
 admin.site.register(Meal)
+admin.site.register(MealRate)
+admin.site.register(Report)

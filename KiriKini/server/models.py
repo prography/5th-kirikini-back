@@ -48,26 +48,27 @@ class User(AbstractBaseUser):
 	@property
 	def is_staff(self):
 		return self.is_admin
-
+		
 
 class Meal(models.Model):	
-	countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 끼니, 1: 간식
+	# countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 끼니, 1: 간식
 	mealType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(3)])  # 0: 집밥, 1: 외식, 2:배달, 3:간편식
 	gihoType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 커피, 1: 술
 	picURL = models.CharField(max_length=255)
-	userId = models.ForeignKey('User', on_delete=models.CASCADE)
-	# commentId = models.ForeignKey('Comment', on_delete=models.CASCADE)
-
+	user = models.ForeignKey('User', on_delete=models.CASCADE)
+	created_at = models.DateTimeField(blank=True, null=True)
+	average_rate = models.IntegerField(blank=True, null=True)
+	# comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
+	
 
 class MealRate(models.Model):
-	userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	user = models.ForeignKey('User', on_delete=models.CASCADE)
 	rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
-	mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
-
+	meal = models.ForeignKey('Meal', on_delete=models.CASCADE)
 
 
 class Report(models.Model):
-	userId = models.ForeignKey('User', on_delete=models.CASCADE)
+	user = models.ForeignKey('User', on_delete=models.CASCADE)
 	countType = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1)])  # 0: 주간, 1: 월간
 	feedback = models.TextField()
 	analysis = models.TextField()
@@ -75,8 +76,8 @@ class Report(models.Model):
 
 
 # class Comment(models.Model):
-	# userId = models.ForeignKey('User', on_delete=models.CASCADE)
-	# mealId = models.ForeignKey('Meal', on_delete=models.CASCADE)
+	# user = models.ForeignKey('User', on_delete=models.CASCADE)
+	# meal = models.ForeignKey('Meal', on_delete=models.CASCADE)
 	# content = models.CharField()
 
 	# def __str__(self):

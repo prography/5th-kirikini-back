@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Django settings for KiriKini project.
 
@@ -10,7 +11,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os, json, datetime
+import os
+import json
+import datetime
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
 
@@ -27,6 +30,7 @@ secret_file = os.path.join(BASE_DIR, 'secrets.json')
 with open(secret_file) as f:
     secrets = json.loads(f.read())
 
+
 def get_secret(setting, secrets=secrets):
     try:
         return secrets[setting]
@@ -34,12 +38,14 @@ def get_secret(setting, secrets=secrets):
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
 
+
 SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.ap-northeast-2.compute.amazonaws.com']
+ALLOWED_HOSTS = ['*', '127.0.0.1', 'localhost',
+                 '.ap-northeast-2.compute.amazonaws.com']
 
 
 # Application definition
@@ -53,15 +59,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # for general
-        'rest_framework.authentication.BasicAuthentication', # for admin
-        'rest_framework.authentication.SessionAuthentication', # for admin
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # for general
+        'rest_framework.authentication.BasicAuthentication',  # for admin
+        'rest_framework.authentication.SessionAuthentication',  # for admin
     ]
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # 테스트용으로 일단 해놨음. 배포시 바꾸기
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -98,10 +104,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'storages',
-    
+
     'server',
     # 'server.apps.ServerConfig',
-    
+
     # 소셜 로그인
     'allauth',
     'allauth.account',
@@ -144,7 +150,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request', # all-auth
+                'django.template.context_processors.request',  # all-auth
             ],
         },
     },
@@ -156,16 +162,39 @@ WSGI_APPLICATION = 'KiriKini.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kirikini',
-        'USER': 'admin',
-        'PASSWORD': 'admin', # DEV: admin, PROD: get_secret("DATABASE_PASSWORD")
-        'HOST': 'localhost', # DEV: localhost, PROD: ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
-        'PORT': '',
+if 'RDS_DB_NAME' in os.environ:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ['RDS_DB_NAME'],
+            'USER': os.environ['RDS_USERNAME'],
+            'PASSWORD': os.environ['RDS_PASSWORD'],
+            'HOST': os.environ['RDS_HOSTNAME'],
+            'PORT': os.environ['RDS_PORT'],
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'kirikini',
+            'USER': 'admin',
+            'PASSWORD': 'admin',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'kirikini',
+#         'USER': 'admin',
+#         'PASSWORD': 'admin', # DEV: admin, PROD: get_secret("DATABASE_PASSWORD")
+#         'HOST': 'localhost', # DEV: localhost, PROD: ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
+#         'PORT': '',
+#     }
+# }
 
 
 # Password validation
@@ -220,16 +249,16 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 
-
 # AWS S3
-AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
-AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
+# AWS_ACCESS_ID = get_secret("AWS_ACCESS_ID")
+# AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
 AWS_QUERYSTRING_AUTH = False
 AWS_REGION = 'ap-northeast-2'
 AWS_DEFAULT_ACL = "private"
 AWS_S3_HOST = 's3.%s.amazonaws.com' % AWS_REGION
 AWS_STORAGE_BUCKET_NAME = 'kirikini'
-AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
+    AWS_STORAGE_BUCKET_NAME, AWS_REGION)
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
