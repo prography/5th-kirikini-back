@@ -7,12 +7,12 @@
 
 - AWS EC2 서버주소
 
-ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
+ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com
 
 - ssh 접속
 
 ```
-ssh -i ~/.ssh/kirikini.pem ubuntu@ec2-54-180-8-109.ap-northeast-2.compute.amazonaws.com
+ssh -i ~/.ssh/kirikini.pem ubuntu@ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com
 python manage.py runserver 0:8000
 ```
 
@@ -32,6 +32,8 @@ Python3.7.1
 ```
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 find . -path "*/migrations/*.pyc" -delete
+(in psql) drop database kirikini;
+(in psql) create database kirikini;
 python manage.py makemigrations
 python manage.py migrate
 ```
