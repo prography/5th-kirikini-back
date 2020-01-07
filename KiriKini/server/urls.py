@@ -15,6 +15,7 @@ urlpatterns = [
     path('email_login', views.email_login, name='email_login'),
     path('meal/', views.create_meal),
     path('meal/<int:pk>', views.detail_meal),
+    path('meal/yesterday_rating', views.load_yesterday_rating),
     path('meal/today', views.load_today_meal),
     path('meal/month', views.load_month_meal),
     path('meal/user/<int:pk>', views.detail_user),

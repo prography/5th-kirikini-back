@@ -28,7 +28,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/kakao_login"
+KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
 # KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
@@ -36,9 +36,9 @@ FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
 # JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
 # JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
 # JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
@@ -55,6 +55,12 @@ def privacy(request):
 @csrf_exempt
 def email_login(request):
     body = dict(request.POST)
+    # body = {email: sj602@naver.com, password: '1234'}
+
+    email = body['email']
+    username = body['email']
+    password = body['password']
+    print(email, username.password)
 
     return Response(status=status.HTTP_200_OK)
 
@@ -294,6 +300,28 @@ def detail_meal(request, pk):
 
 
 @api_view(['GET'])
+def load_yesterday_rating(request):
+    user_id = request.user.id
+    now = datetime.datetime.now() - datetime.timedelta(days=1)
+    date = now.strftime("%Y-%m-%d")
+
+    meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    yesterday_rating = None
+
+    try:
+        yesterday_rating_sum = 0
+        for meal in meals:
+            yesterday_rating_sum += meal.average_rate
+
+        yesterday_rating = yesterday_rating_sum / meals.count()
+    except Exception as err:
+        print(err)
+        return JsonResponse(err)
+
+    return JsonResponse(yesterday_rating, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
 def load_today_meal(request):
     user_id = request.user.id
     now = datetime.datetime.now()
@@ -307,7 +335,7 @@ def load_today_meal(request):
 
 @api_view(['GET', 'POST'])
 def load_month_meal(request):
-    def _get_week_of_month(date):
+    def _get_week_of_month(date):  # by yejiCho
         if type(date) == str:
             date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
