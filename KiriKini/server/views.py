@@ -28,7 +28,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/kakao_login"
+KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
 # KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 FACEBOOK_APP_ID = "650104882182241"
@@ -36,13 +36,12 @@ FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
 # JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
 # JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
 # JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
-
 
 def index(request):
     return render(request, 'index.html')
@@ -294,6 +293,33 @@ def detail_meal(request, pk):
 
 
 @api_view(['GET'])
+def load_yesterday_rating(request):
+    user_id = request.user.id
+    now = datetime.datetime.now() - datetime.timedelta(days=1)
+    date = now.strftime("%Y-%m-%d")
+
+    meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    yesterday_rating = None
+
+    try:
+        yesterday_rating_sum = 0
+        for meal in meals:
+            yesterday_rating_sum += meal.average_rate
+
+        yesterday_rating = yesterday_rating_sum / meals.count()
+        print(1)
+    except Exception as err:
+        print(err)
+        return JsonResponse(err, safe=False)
+    
+    data = {
+        'count': meals.count(),
+        'sum': yesterday_rating_sum
+    }
+    return JsonResponse(data=data, status=status.HTTP_200_OK, safe=False)
+
+
+@api_view(['GET'])
 def load_today_meal(request):
     user_id = request.user.id
     now = datetime.datetime.now()
@@ -404,3 +430,35 @@ def rate_meal(request):
         else:
             print("error: ", meal_rate_serializer.errors)
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def load_since_meal_info(request):
+    user_id = request.user.id
+    now = datetime.datetime.now()
+    now = now.strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+
+    meals = Meal.objects.filter(user=user_id).order_by('-created_at')
+    meals = list(meals.values())
+
+    since_info = {
+        'meal': 0,
+        'coffee': 0,
+        'drink': 0,
+    }
+
+    for meal in meals:
+        meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        meal_time = datetime.datetime.strptime(meal_time, '%Y-%m-%d %H:%M:%S')
+        delta_seconds = int((now - meal_time).total_seconds())
+
+        if 'giho_type' in meal:
+            if meal['giho_type'] == 0 and since_info['coffee'] == 0:  # 커피
+                since_info['coffee'] = delta_seconds
+            if meal['giho_type'] == 1 and since_info['drink'] == 0:  # 술
+                since_info['drink'] = delta_seconds
+        else:
+            since_info['meal'] = delta_seconds
+
+    return JsonResponse(since_info, status=status.HTTP_200_OK)
