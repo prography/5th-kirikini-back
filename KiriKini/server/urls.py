@@ -19,5 +19,6 @@ urlpatterns = [
     path('meal/today', views.load_today_meal),
     path('meal/month', views.load_month_meal),
     path('meal/user/<int:pk>', views.detail_user),
+    path('meal/since', views.load_since_meal_info),
     path('rate/', views.rate_meal),
 ]

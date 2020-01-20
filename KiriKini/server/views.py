@@ -43,7 +43,6 @@ JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
 # JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
 # JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
-
 def index(request):
     return render(request, 'index.html')
 
@@ -314,11 +313,24 @@ def load_yesterday_rating(request):
             yesterday_rating_sum += meal.average_rate
 
         yesterday_rating = yesterday_rating_sum / meals.count()
+<<<<<<< HEAD
     except Exception as err:
         print(err)
         return JsonResponse(err)
 
     return JsonResponse(yesterday_rating, status=status.HTTP_200_OK)
+=======
+        print(1)
+    except Exception as err:
+        print(err)
+        return JsonResponse(err, safe=False)
+    
+    data = {
+        'count': meals.count(),
+        'sum': yesterday_rating_sum
+    }
+    return JsonResponse(data=data, status=status.HTTP_200_OK, safe=False)
+>>>>>>> 2a78b41bcad7e58ffcae99dfa2e00b1bdddeeb0b
 
 
 @api_view(['GET'])
@@ -432,3 +444,35 @@ def rate_meal(request):
         else:
             print("error: ", meal_rate_serializer.errors)
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def load_since_meal_info(request):
+    user_id = request.user.id
+    now = datetime.datetime.now()
+    now = now.strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+
+    meals = Meal.objects.filter(user=user_id).order_by('-created_at')
+    meals = list(meals.values())
+
+    since_info = {
+        'meal': 0,
+        'coffee': 0,
+        'drink': 0,
+    }
+
+    for meal in meals:
+        meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        meal_time = datetime.datetime.strptime(meal_time, '%Y-%m-%d %H:%M:%S')
+        delta_seconds = int((now - meal_time).total_seconds())
+
+        if 'giho_type' in meal:
+            if meal['giho_type'] == 0 and since_info['coffee'] == 0:  # 커피
+                since_info['coffee'] = delta_seconds
+            if meal['giho_type'] == 1 and since_info['drink'] == 0:  # 술
+                since_info['drink'] = delta_seconds
+        else:
+            since_info['meal'] = delta_seconds
+
+    return JsonResponse(since_info, status=status.HTTP_200_OK)
