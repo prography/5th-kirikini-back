@@ -313,24 +313,11 @@ def load_yesterday_rating(request):
             yesterday_rating_sum += meal.average_rate
 
         yesterday_rating = yesterday_rating_sum / meals.count()
-<<<<<<< HEAD
     except Exception as err:
         print(err)
         return JsonResponse(err)
 
     return JsonResponse(yesterday_rating, status=status.HTTP_200_OK)
-=======
-        print(1)
-    except Exception as err:
-        print(err)
-        return JsonResponse(err, safe=False)
-    
-    data = {
-        'count': meals.count(),
-        'sum': yesterday_rating_sum
-    }
-    return JsonResponse(data=data, status=status.HTTP_200_OK, safe=False)
->>>>>>> 2a78b41bcad7e58ffcae99dfa2e00b1bdddeeb0b
 
 
 @api_view(['GET'])
