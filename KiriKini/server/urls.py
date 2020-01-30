@@ -20,5 +20,6 @@ urlpatterns = [
     path('meal/month', views.load_month_meal),
     path('meal/user/<int:pk>', views.detail_user),
     path('meal/since', views.load_since_meal_info),
+    path('report/week', views.load_week_report),
     path('rate/', views.rate_meal),
 ]

@@ -6,6 +6,7 @@ from dateutil import parser
 import calendar
 import datetime
 
+from django.utils import timezone
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core import serializers
@@ -31,10 +32,10 @@ KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
 KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
 # KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
-FACEBOOK_APP_ID = "650104882182241"
-FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
-FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
-FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
+# FACEBOOK_APP_ID = "650104882182241"
+# FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
+# FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
+# FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
 JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
 JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
@@ -42,6 +43,7 @@ JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
 # JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
 # JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
 # JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+
 
 def index(request):
     return render(request, 'index.html')
@@ -141,9 +143,6 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
             user_data = {
                 'email': user_email,
                 'username': user_email,
-                'accessToken': access_token,
-                # 'refreshToken': refresh_token,
-                # 'password': access_token[:10]
                 'password': user_email
             }
             user = UserSerializer(data=user_data, partial=True)
@@ -155,7 +154,7 @@ def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 �
 
         jwt_data = {
             'email': user_email,
-            'password': user_email
+            'password': user_email  # todo: user 객체로 넣기?
         }
         jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
         print("jwt ", jwt)
@@ -301,10 +300,11 @@ def detail_meal(request, pk):
 @api_view(['GET'])
 def load_yesterday_rating(request):
     user_id = request.user.id
-    now = datetime.datetime.now() - datetime.timedelta(days=1)
+    now = timezone.now() - datetime.timedelta(days=1)
     date = now.strftime("%Y-%m-%d")
 
     meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    print("yesterday meals: ", meals)
     yesterday_rating = None
 
     try:
@@ -323,7 +323,7 @@ def load_yesterday_rating(request):
 @api_view(['GET'])
 def load_today_meal(request):
     user_id = request.user.id
-    now = datetime.datetime.now()
+    now = timezone.now()
     date = now.strftime("%Y-%m-%d")
 
     meals = Meal.objects.filter(user=user_id, created_at__contains=date)
@@ -334,7 +334,7 @@ def load_today_meal(request):
 
 @api_view(['GET', 'POST'])
 def load_month_meal(request):
-    def _get_week_of_month(date):  # by yejiCho
+    def _get_week_of_month(date):
         if type(date) == str:
             date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
@@ -360,10 +360,13 @@ def load_month_meal(request):
     for t in body.keys():
         month = json.loads(t)
 
+    if len(str(month["month"])) == 1:
+        month["month"] = "0" + str(month["month"])
+
     user_id = request.user.id
-    now = datetime.datetime.now()
+    now = timezone.now()
     year = now.strftime("%Y")
-    date = year + '-' + str(month['month'])
+    date = year + '-' + month['month']
 
     meals = Meal.objects.filter(user=user_id, created_at__contains=date)
     meals = list(meals.values())
@@ -436,7 +439,7 @@ def rate_meal(request):
 @api_view(['GET'])
 def load_since_meal_info(request):
     user_id = request.user.id
-    now = datetime.datetime.now()
+    now = timezone.now()
     now = now.strftime('%Y-%m-%d %H:%M:%S')
     now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
 
@@ -463,3 +466,193 @@ def load_since_meal_info(request):
             since_info['meal'] = delta_seconds
 
     return JsonResponse(since_info, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def load_week_report(request):
+    def _get_start_end_day_of_week(date):
+        start = date - datetime.timedelta(days=date.weekday())
+        end = start + datetime.timedelta(days=6)
+        return timezone.make_aware(parser.parse(start.strftime("%Y-%m-%d"))), timezone.make_aware(parser.parse(end.strftime("%Y-%m-%d")))
+
+    user_id = request.user.id
+    now = timezone.now()
+    start_day, end_day = _get_start_end_day_of_week(now)
+
+    meals = Meal.objects.filter(
+        user=user_id, created_at__range=(start_day, end_day))
+    meals = list(meals.values())
+
+    try:
+        week_score = 0
+        meal_count = 0
+        drink_count = 0
+        coffee_count = 0
+        # score_by_day = {
+        #     0: 0,
+        #     1: 0,
+        #     2: 0,
+        #     3: 0,
+        #     4: 0,
+        #     5: 0,
+        #     6: 0
+        # }
+        score_by_day = [{"count": 0, "score": 0} for _ in range(7)]
+        score_by_meal_type = [{"count": 0, "score": 0} for _ in range(4)]
+        print(score_by_day)
+
+        for meal in meals:
+            week_score += meal["average_rate"]
+            meal_count += 1
+
+            if meal["gihoType"] == 0:  # 커피
+                coffee_count += 1
+            elif meal["gihoType"] == 1:  # 술
+                drink_count += 1
+
+            if meal["created_at"].weekday() == 0:  # 월
+                score_by_day[0]["count"] += 1
+                score_by_day[0]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 1:
+                score_by_day[1]["count"] += 1
+                score_by_day[1]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 2:
+                score_by_day[2]["count"] += 1
+                score_by_day[2]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 3:
+                score_by_day[3]["count"] += 1
+                score_by_day[3]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 4:
+                score_by_day[4]["count"] += 1
+                score_by_day[4]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 5:
+                score_by_day[5]["count"] += 1
+                score_by_day[5]["score"] += meal["average_rate"]
+            elif meal["created_at"].weekday() == 6:
+                score_by_day[6]["count"] += 1
+                score_by_day[6]["score"] += meal["average_rate"]
+
+            if meal["mealType"] == 0:  # 집밥
+                score_by_meal_type[0]["count"] += 1
+                score_by_meal_type[0]["score"] += meal["average_rate"]
+            elif meal["mealType"] == 1:  # 외식
+                score_by_meal_type[1]["count"] += 1
+                score_by_meal_type[1]["score"] += meal["average_rate"]
+            elif meal["mealType"] == 2:  # 배달
+                score_by_meal_type[2]["count"] += 1
+                score_by_meal_type[2]["score"] += meal["average_rate"]
+            elif meal["mealType"] == 3:  # 간편식
+                score_by_meal_type[3]["count"] += 1
+                score_by_meal_type[3]["score"] += meal["average_rate"]
+
+        counts_by_meal_type = []
+        for i in range(7):
+            if score_by_day[i]["count"] > 0:
+                score_by_day[i]["score"] = round(
+                    score_by_day[i]["score"] / score_by_day[i]["count"], 1)
+            counts_by_meal_type.append(score_by_day[i]["count"])
+
+        # comment1 = "건강한" if drink_count+coffee_count >= 9 else "건강하지 못 한"
+
+        # feedback = (
+        #     '님의 지난 7일간의 식단 레포트야.'
+        #     f'총 {meal_count}끼니의 끼니 횟수, '
+        #     f'{drink_count}회의 음주, {coffee_count}회의 카페인으로 {comment1} 습관,'
+        #     f'건강도 {week_score}에 달하는 당신은 '
+        #     f''
+        # )
+
+        week_report = {
+            "week_score": meal_count if meal_count == 0 else round(week_score / meal_count, 1),
+            "avg_meal_count": round(meal_count / 7, 1),
+            "meal_count": meal_count,
+            "drink_count": drink_count,
+            "coffee_count": coffee_count,
+            "score_by_day": score_by_day,
+            "score_by_meal_type": score_by_meal_type,
+            "counts_by_meal_type": counts_by_meal_type
+            # "feedback": feedback
+        }
+
+        return JsonResponse(week_report, status=status.HTTP_200_OK)
+
+# 끼리니가 너의 이번주 식단을 평가해주지!
+
+# 총 n끼니의 (과도한 / 적절한 / 부족한) 끼니 횟수,
+# n회의 음주 n회의 카페인으로 (건강한 / 건강하지 못한) 습관,
+# (간편식 / 배달 / 집밥 / 외식) 이 많으며
+# 건강도 (n)점에 달하는 당신은
+# [점수에 따른 건강도 코멘트], (8점 이상 - 다음주도 이번주처럼! / 4-7점 다음주는 더 분발하는게 어때? / 0-3점 – 다음주는 사람답게 먹자!)
+
+
+# <끼니 횟수 코멘트>
+
+# (끼니 15회 이하 - 굶주림)
+# -지금처럼 조금 먹다가는 살과 함께 건강도 같이 빠질거에요
+# -끼니 좀 거르지마! 또 거르면 끼리니가 너를 걸러낼거야!
+# -이번주도 제대로 못 챙겨 먹은 당신. 다음주에는 끼리끼니와 함께 더 열심히 먹어봅시다!
+
+# (끼니 16~24회 - 칭찬)
+# -이대로 라면 100살까지는 거뜬히 살 수 있을거에요
+# -이대로 라면 건강 걱정은 없을겁니다!
+# -끼니를 거르지 않는 당신은 이 시대의 건강왕!
+
+# (끼니 25회 이상 - 과식)
+# -지금처럼 많이 먹다가는 몸무게 앞자리가 달라지는 경험을 하실거에요
+# -대부분은 살기 위해 먹는데, 당신은 먹기 위해 사는 것이 확실하네요
+# -또..또..먹었어요,,? 그만…그만…그만…!!
+
+# <술 코멘트>
+
+# (주 2회이상)
+# -당신의 간이 지쳐가고 있어요
+# -간이 욕한다 욕해,,
+# -너는 간이 3개니?
+# -이번주는 물보다 술을 많이 마셨네! 대단하다 친구야!
+# -맨날 술이야~ 맨날 술이야~
+# -매일 술 퍼마시는 너를 보면 끼리니는 술퍼져..
+
+# (1회)
+# -이번주 당신의 음주는 아주 바람직하네요!
+# -그래 일주일에 한 번은 괜찮지!
+# (0회)
+# -이번주는 금주에 성공했어요! 짝짝짝!
+# -이번주 금주 기념으로 끼리니가 술 한잔 살게~! 밥 한 술~!
+
+# <커피 코멘트>
+# (주 6회이상)
+# -당신은 정말 물 마시듯 커피를 드시네요
+# -뭐든지 적당히 좀!
+# -정신을 깨기 위해서 커피를 마시는건데 이렇게 마시다 머리가 깨지겠어요
+# -이번주는 물보다 커피를 더 많이 마셨겠네요
+# -이번주에 마신 카페인은 당신을 폐인으로 만들 수도 있는 양이었어요…
+
+# (1~5회)
+# -이번주 당신의 카페인의 엑셀런트! 적당한 카페인은 몸에도 좋다네요!
+# -이번주 마신 카페인 정도는 끼리니가 봐줄게!
+# (0회)
+# -이번주 당신은 금카(0카페인)에 성공했어요!
+# -카페인이 필요 없는 당신, 건강은 너의 것!
+# <음식 형태>
+
+# (외식) 바깥 음식을 좋아하는 당신[코멘트]
+# -이번주는 외식이 많았어요! 맛은 있지만 건강에는 안좋을 수도 있어요..내 지갑 사정에도 안좋고..
+# -외식을 하더라도 샐러드나 생선과 같이 건강한 외식에 도전해보는 것은 어떨까요?
+# (배달) 배달 음식을 너무 많이 먹고 있어요(경고등 이모티콘)[코멘트]
+
+# -배달의민족이 진짜 우리 민족은 아니에요. 다음주에는 건강한 집밥에 도전해보는 것은 어떨까요?
+# -자극적인 배달 음식을 많이 먹었다면 이제 건강식에 도전해보는 것은 어떨까요?
+# -치킨, 피자, 족발, 보쌈 중 2개 이상을 먹었다면 배민과 잠시 이별해야 할 시간이에요..
+
+# (집밥) 집밥을 많이 먹었어요![코멘트]
+# -집밥을 많이 먹었다는 것은 좋은 징조에요! 집밥을 먹더라도 다양한 영양소를 먹어야 하는 것 알죠?
+# -집밥을 애정하는 당신! 다음주에는 더 다양한 요리에 도전해보는 것은 어떨까요?
+
+# (간편식) 간편식을 너무 많이 먹었어요[코멘트]
+# -간편함이 건강을 보장하지는 않는답니다!
+# -편하게 먹으려는 자는 편치 못한 건강을 얻을 것이다
+# -빠르게 먹는 것을 좋아하다가 빠르게 갈 수도 있어요!
+
+    except Exception as err:
+        print(err)
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
