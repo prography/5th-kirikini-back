@@ -7,12 +7,12 @@
 
 - AWS EC2 서버주소
 
-ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com
+  13.124.158.62
 
 - ssh 접속
 
 ```
-ssh -i ~/.ssh/kirikini.pem ubuntu@ec2-52-78-23-61.ap-northeast-2.compute.amazonaws.com
+ssh -i ~/.ssh/kirikini.pem ubuntu@13.124.158.62
 python manage.py runserver 0:8000
 ```
 

@@ -29,20 +29,20 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
-# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+# KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
+KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 # FACEBOOK_APP_ID = "650104882182241"
 # FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 # FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 # FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
-# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
@@ -56,14 +56,27 @@ def privacy(request):
 @csrf_exempt
 def email_login(request):
     body = dict(request.POST)
-    # body = {email: sj602@naver.com, password: '1234'}
 
-    email = body['email']
+    user_email = body['email']
     username = body['email']
     password = body['password']
-    print(email, username.password)
 
-    return Response(status=status.HTTP_200_OK)
+    user = User.objects.filter(email=user_email)
+    if not user:
+        user_data = {
+            'email': user_email,
+            'username': user_email,
+            'password': user_email
+        }
+        user = UserSerializer(data=user_data, partial=True)
+        if user.is_valid():
+            user.save()
+            print("user created")
+            return Response(status=status.HTTP_200_OK)
+        else:
+            print("error", user.errors)
+    else:
+        return Response(status=status.HTTP_200_OK)
 
 
 @csrf_exempt
@@ -304,7 +317,6 @@ def load_yesterday_rating(request):
     date = now.strftime("%Y-%m-%d")
 
     meals = Meal.objects.filter(user=user_id, created_at__contains=date)
-    print("yesterday meals: ", meals)
     yesterday_rating = None
 
     try:
@@ -317,7 +329,7 @@ def load_yesterday_rating(request):
         print(err)
         return JsonResponse(err)
 
-    return JsonResponse(yesterday_rating, status=status.HTTP_200_OK)
+    return JsonResponse(yesterday_rating, status=status.HTTP_200_OK, safe=False)
 
 
 @api_view(['GET'])
@@ -440,8 +452,11 @@ def rate_meal(request):
 def load_since_meal_info(request):
     user_id = request.user.id
     now = timezone.now()
+    print(f'now{now}')
     now = now.strftime('%Y-%m-%d %H:%M:%S')
+    print(f'now{now}')
     now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+    print(f'now{now}')
 
     meals = Meal.objects.filter(user=user_id).order_by('-created_at')
     meals = list(meals.values())
@@ -456,14 +471,17 @@ def load_since_meal_info(request):
         meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
         meal_time = datetime.datetime.strptime(meal_time, '%Y-%m-%d %H:%M:%S')
         delta_seconds = int((now - meal_time).total_seconds())
+        print(f'now{now}, meal_time{meal_time}')
 
-        if 'giho_type' in meal:
-            if meal['giho_type'] == 0 and since_info['coffee'] == 0:  # 커피
+        if 'gihoType' in meal:
+            if meal['gihoType'] == 0 and since_info['coffee'] == 0:  # 커피
                 since_info['coffee'] = delta_seconds
-            if meal['giho_type'] == 1 and since_info['drink'] == 0:  # 술
+            if meal['gihoType'] == 1 and since_info['drink'] == 0:  # 술
                 since_info['drink'] = delta_seconds
         else:
             since_info['meal'] = delta_seconds
+
+    print(f'since_info:{since_info}')
 
     return JsonResponse(since_info, status=status.HTTP_200_OK)
 
@@ -473,7 +491,26 @@ def load_week_report(request):
     def _get_start_end_day_of_week(date):
         start = date - datetime.timedelta(days=date.weekday())
         end = start + datetime.timedelta(days=6)
-        return timezone.make_aware(parser.parse(start.strftime("%Y-%m-%d"))), timezone.make_aware(parser.parse(end.strftime("%Y-%m-%d")))
+        return timezone.make_aware(parser.parse(start.strftime("%Y-%m-%d"))), (timezone.make_aware(parser.parse(end.strftime("%Y-%m-%d")) + datetime.timedelta(hours=23, seconds=3599)))
+
+    def _load_previous_week_rating():
+        user_id = request.user.id
+        previous_week = timezone.now() - datetime.timedelta(days=7)
+        date = previous_week.strftime("%Y-%m-%d")
+        previous_week_start_day, previous_week_end_day = _get_start_end_day_of_week(
+            previous_week)
+        meals = Meal.objects.filter(
+            user=user_id, created_at__range=(previous_week_start_day, previous_week_end_day))
+
+        try:
+            previous_week_rating_sum = 0
+            for meal in meals:
+                previous_week_rating_sum += meal.average_rate
+
+            previous_week_rating = previous_week_rating_sum / meals.count()
+            return previous_week_rating
+        except Exception as err:
+            return print(err)
 
     user_id = request.user.id
     now = timezone.now()
@@ -488,18 +525,8 @@ def load_week_report(request):
         meal_count = 0
         drink_count = 0
         coffee_count = 0
-        # score_by_day = {
-        #     0: 0,
-        #     1: 0,
-        #     2: 0,
-        #     3: 0,
-        #     4: 0,
-        #     5: 0,
-        #     6: 0
-        # }
         score_by_day = [{"count": 0, "score": 0} for _ in range(7)]
         score_by_meal_type = [{"count": 0, "score": 0} for _ in range(4)]
-        print(score_by_day)
 
         for meal in meals:
             week_score += meal["average_rate"]
@@ -551,6 +578,10 @@ def load_week_report(request):
                 score_by_day[i]["score"] = round(
                     score_by_day[i]["score"] / score_by_day[i]["count"], 1)
             counts_by_meal_type.append(score_by_day[i]["count"])
+        for i in range(4):
+            if score_by_meal_type[i]["count"] > 0:
+                score_by_meal_type[i]["score"] = round(
+                    score_by_meal_type[i]["score"] / score_by_meal_type[i]["count"], 1)
 
         # comment1 = "건강한" if drink_count+coffee_count >= 9 else "건강하지 못 한"
 
@@ -564,6 +595,7 @@ def load_week_report(request):
 
         week_report = {
             "week_score": meal_count if meal_count == 0 else round(week_score / meal_count, 1),
+            "previous_week_score": _load_previous_week_rating(),
             "avg_meal_count": round(meal_count / 7, 1),
             "meal_count": meal_count,
             "drink_count": drink_count,
@@ -578,6 +610,18 @@ def load_week_report(request):
 
 # 끼리니가 너의 이번주 식단을 평가해주지!
 
+# <주간 레포트>
+
+# ooo님의 지난 7일간의 식단 레포트야.
+# ///선그래프
+# 이번주의 당신은 총 n회의 끼니를 먹었어![코멘트]
+# ///막대그래프(술.커피 총 2개)
+# 당신의 음주 횟수는 n회이고 [코멘트]
+# 커피는 n회 마셨어[코멘트]
+# ///원그래프(식단형태)
+# 배달 n회, 집밥 n회, 외식 n회, 간편식 n회 로
+# [코멘트]
+# 끼리니가 너의 이번주 식단을 평가해주지!
 # 총 n끼니의 (과도한 / 적절한 / 부족한) 끼니 횟수,
 # n회의 음주 n회의 카페인으로 (건강한 / 건강하지 못한) 습관,
 # (간편식 / 배달 / 집밥 / 외식) 이 많으며
