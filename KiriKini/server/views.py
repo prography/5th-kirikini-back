@@ -2,9 +2,10 @@
 from __future__ import unicode_literals
 import json
 import requests
-from dateutil import parser
 import calendar
 import datetime
+import random
+from dateutil import parser
 
 from django.utils import timezone
 from django.shortcuts import render
@@ -26,23 +27,29 @@ from rest_auth.registration.views import SocialLoginView
 from .serializers import MealSerializer, UserSerializer, MealRateSerializer
 from .models import Meal, User, MealRate
 from django.contrib.auth import get_user_model
+
+from .consts import comments
+
+import emoji
+
+
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-# KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
-KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
+# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 # FACEBOOK_APP_ID = "650104882182241"
 # FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 # FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 # FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-# JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
-# JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
-# JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
-JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
@@ -81,14 +88,7 @@ def email_login(request):
 
 @csrf_exempt
 def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
-    # jwt가 유효하지 않다면 재발급하기 위해 앱에서 access token과 refresh token을 둘 다 보냄
-    body = dict(request.POST)
-    token = None
-
-    for t in body.keys():
-        token = t
-
-    token = json.loads(token)
+    token = json.loads(request.body)
     jwt_access_token = token['jwt_access_token']
     jwt_refresh_token = token['jwt_refresh_token']
     email = token['email']
@@ -124,12 +124,7 @@ def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
 
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
-    body = dict(request.POST)
-    token = None
-    for t in body.keys():
-        token = t
-
-    token = json.loads(token)
+    token = json.loads(request.body)
     access_token = token['access_token']
     refresh_token = token['refresh_token']
 
@@ -227,20 +222,6 @@ def facebook_login(request):
     return Response(data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
-def detail_user(request, pk):
-    # permissions = (permissions.IsAuthenticatedOrReadOnly,)
-    """
-    """
-    try:
-        users = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response(status=400)
-    if request.method == 'GET':
-        serializer = UserSerializer(meals)
-        return Response(serializer.data)
-
-
 @api_view(['GET', 'POST'])
 def create_meal(request):
     if request.method == 'GET':
@@ -248,9 +229,7 @@ def create_meal(request):
         serializer = MealSerializer(meals, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        body = dict(request.POST)
-        for t in body.keys():
-            body = json.loads(t)
+        body = json.loads(request.body)
 
         meal_data = {
             'user': request.user.id,
@@ -284,30 +263,6 @@ def create_meal(request):
             print("error: ", meal_serializer.errors)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET', 'PUT', 'DELETE'])
-def detail_meal(request, pk):
-    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly, )
-    """
-    """
-    try:
-        meals = Meal.objects.get(pk=pk)
-    except Meal.DoesNotExist:
-        return Response(status=400)
-
-    if request.method == 'GET':
-        serializer = MealSerializer(meals)
-        return Response(serializer.data)
-    elif request.method == 'PUT':
-        serializer = MealSerializer(meals, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        meals.delete()
-        return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -366,11 +321,7 @@ def load_month_meal(request):
 
         return week_number
 
-    body = dict(request.POST)
-    month = None
-
-    for t in body.keys():
-        month = json.loads(t)
+    month = json.loads(request.body)
 
     if len(str(month["month"])) == 1:
         month["month"] = "0" + str(month["month"])
@@ -421,9 +372,7 @@ def rate_meal(request):
         return JsonResponse(meals_not_rated, status=status.HTTP_200_OK, safe=False)
 
     elif request.method == 'POST':  # todo: 끼니 채점 정보를 앱으로부터 받아온다
-        body = dict(request.POST)
-        for t in body.keys():
-            body = json.loads(t)
+        body = json.loads(request.body)
 
         meal_to_rate = {
             'user': user_id,
@@ -452,12 +401,10 @@ def rate_meal(request):
 def load_since_meal_info(request):
     user_id = request.user.id
     now = timezone.now()
-    print(f'now{now}')
     now = now.strftime('%Y-%m-%d %H:%M:%S')
-    print(f'now{now}')
     now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
-    print(f'now{now}')
 
+    # todo
     meals = Meal.objects.filter(user=user_id).order_by('-created_at')
     meals = list(meals.values())
 
@@ -471,22 +418,20 @@ def load_since_meal_info(request):
         meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
         meal_time = datetime.datetime.strptime(meal_time, '%Y-%m-%d %H:%M:%S')
         delta_seconds = int((now - meal_time).total_seconds())
-        print(f'now{now}, meal_time{meal_time}')
 
         if 'gihoType' in meal:
             if meal['gihoType'] == 0 and since_info['coffee'] == 0:  # 커피
                 since_info['coffee'] = delta_seconds
             if meal['gihoType'] == 1 and since_info['drink'] == 0:  # 술
                 since_info['drink'] = delta_seconds
-        else:
-            since_info['meal'] = delta_seconds
+                since_info['meal'] = delta_seconds
 
     print(f'since_info:{since_info}')
 
     return JsonResponse(since_info, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def load_week_report(request):
     def _get_start_end_day_of_week(date):
         start = date - datetime.timedelta(days=date.weekday())
@@ -512,7 +457,42 @@ def load_week_report(request):
         except Exception as err:
             return print(err)
 
+    def _get_comments(type):
+        if type == 'meal':
+            if meal_count >= 25:
+                return random.choice(comments["meal"]["overeating"])
+            elif meal_count >= 16:
+                return random.choice(comments["meal"]["compliment"])
+            else:
+                return random.choice(comments["meal"]["starving"])
+
+        elif type == 'drink':
+            if drink_count >= 2:
+                return random.choice(comments["drink"]["2"])
+            elif drink_count == 1:
+                return random.choice(comments["drink"]["1"])
+            else:
+                return random.choice(comments["drink"]["0"])
+
+        elif type == 'coffee':
+            if coffee_count >= 6:
+                return random.choice(comments["coffee"]["6"])
+            elif coffee_count >= 1:
+                return random.choice(comments["coffee"]["5"])
+            else:
+                return random.choice(comments["coffee"]["0"])
+
+        elif type == 'house':
+            return random.choice(comments["house"])
+        elif type == 'out':
+            return random.choice(comments["out"])
+        elif type == 'delivery':
+            return random.choice(comments["delivery"])
+        elif type == 'simple':
+            return random.choice(comments["simple"])
+
     user_id = request.user.id
+    # user_name = request.user_name
     now = timezone.now()
     start_day, end_day = _get_start_end_day_of_week(now)
 
@@ -583,32 +563,70 @@ def load_week_report(request):
                 score_by_meal_type[i]["score"] = round(
                     score_by_meal_type[i]["score"] / score_by_meal_type[i]["count"], 1)
 
-        # comment1 = "건강한" if drink_count+coffee_count >= 9 else "건강하지 못 한"
+        week_score = meal_count if meal_count == 0 else round(
+            week_score / meal_count, 1)
+        avg_meal_count = round(meal_count / 7, 1)
 
-        # feedback = (
-        #     '님의 지난 7일간의 식단 레포트야.'
-        #     f'총 {meal_count}끼니의 끼니 횟수, '
-        #     f'{drink_count}회의 음주, {coffee_count}회의 카페인으로 {comment1} 습관,'
-        #     f'건강도 {week_score}에 달하는 당신은 '
-        #     f''
-        # )
+        comment0 = "과도한" if meal_count >= 25 else "적절한" if meal_count >= 16 else "부족한"
+        comment1 = "건강한" if drink_count+coffee_count >= 9 else "건강하지 못 한"
+        comment2 = None
+        comment3 = '다음주도 이번주처럼!' if week_score >= 8 else '다음주는 더 분발하는게 어때?' if week_score >= 4 else '다음주는 사람답게 먹자!'
+        comment4 = [_get_comments("meal"), _get_comments(
+            "drink"), _get_comments("coffee")]
+        comment5 = None
+
+        max_count_by_type = 0
+        max_type = None
+        for i in range(4):
+            if(max_count_by_type < score_by_meal_type[i]["count"]):
+                max_count_by_type = score_by_meal_type[i]["count"]
+                if i == 0:
+                    max_type = "house"
+                    comment2 = "집밥"
+                elif i == 1:
+                    max_type = "out"
+                    comment2 = "외식"
+                elif i == 2:
+                    max_type = "delivery"
+                    comment2 = "배달"
+                else:
+                    max_type = "simple"
+                    comment2 = "간편식"
+
+        comment5 = "집밥을 많이 먹었어요! " if max_type == "house" else "바깥 음식을 좋아하는 당신! " \
+            if max_type == "out" else f'배달 음식을 너무 많이 먹고있어요! {emoji.emojize(":warning:")}' \
+            if max_type == "delivery" else "간편식을 너무 많이 먹었어요! "
+        comment5 += _get_comments(max_type)
+
+        feedback = [
+            '끼리니가 이번주 식단을 평가해주지!\n',
+            f'총 {meal_count}끼니의 {comment0} 끼니 횟수, \n',
+            f'{drink_count}회의 음주, {coffee_count}회의 카페인으로 {comment1} 습관,\n',
+            f'{comment2}이 많으며,\n',
+            f'건강도 {week_score}에 달하는 당신은 \n\n{comment3}\n',
+            comment4,
+            comment5
+        ]
 
         week_report = {
-            "week_score": meal_count if meal_count == 0 else round(week_score / meal_count, 1),
+            "week_score": week_score,
             "previous_week_score": _load_previous_week_rating(),
-            "avg_meal_count": round(meal_count / 7, 1),
+            "avg_meal_count": avg_meal_count,
             "meal_count": meal_count,
             "drink_count": drink_count,
             "coffee_count": coffee_count,
             "score_by_day": score_by_day,
             "score_by_meal_type": score_by_meal_type,
-            "counts_by_meal_type": counts_by_meal_type
-            # "feedback": feedback
+            "counts_by_meal_type": counts_by_meal_type,
+            "feedback": feedback
         }
 
         return JsonResponse(week_report, status=status.HTTP_200_OK)
 
-# 끼리니가 너의 이번주 식단을 평가해주지!
+    except Exception as err:
+        print(err)
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # <주간 레포트>
 
@@ -621,13 +639,14 @@ def load_week_report(request):
 # ///원그래프(식단형태)
 # 배달 n회, 집밥 n회, 외식 n회, 간편식 n회 로
 # [코멘트]
+
 # 끼리니가 너의 이번주 식단을 평가해주지!
+
 # 총 n끼니의 (과도한 / 적절한 / 부족한) 끼니 횟수,
 # n회의 음주 n회의 카페인으로 (건강한 / 건강하지 못한) 습관,
 # (간편식 / 배달 / 집밥 / 외식) 이 많으며
 # 건강도 (n)점에 달하는 당신은
 # [점수에 따른 건강도 코멘트], (8점 이상 - 다음주도 이번주처럼! / 4-7점 다음주는 더 분발하는게 어때? / 0-3점 – 다음주는 사람답게 먹자!)
-
 
 # <끼니 횟수 코멘트>
 
@@ -696,7 +715,3 @@ def load_week_report(request):
 # -간편함이 건강을 보장하지는 않는답니다!
 # -편하게 먹으려는 자는 편치 못한 건강을 얻을 것이다
 # -빠르게 먹는 것을 좋아하다가 빠르게 갈 수도 있어요!
-
-    except Exception as err:
-        print(err)
-        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
