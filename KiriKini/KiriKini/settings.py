@@ -40,6 +40,7 @@ SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 DEBUG = False
 
 ALLOWED_HOSTS = ['13.124.158.62']
+# ALLOWED_HOSTS = ['*']
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

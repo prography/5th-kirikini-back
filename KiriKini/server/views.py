@@ -125,12 +125,13 @@ def auto_login(request):  # 앱에서 jwt가 있으면 자동로그인한다
 @csrf_exempt
 def kakao_login(request):  # 앱에서 JWT가 없는경우 소셜 사이트의 토큰을 받아서 서버에 인증 후 토큰 반환
     token = json.loads(request.body)
+    print(token)
     access_token = token['access_token']
     refresh_token = token['refresh_token']
 
     headers = {
         'Authorization': f'Bearer {access_token}',
-        'Content-type': "application/x-www-form-urlencoded; charset=utf-8"
+        'Content-type': "application/x-www-form-urlencoded; charset=-8"
     }
     validate_token = requests.get(
         "https://kapi.kakao.com/v1/user/access_token_info",
@@ -279,7 +280,7 @@ def load_yesterday_rating(request):
         for meal in meals:
             yesterday_rating_sum += meal.average_rate
 
-        yesterday_rating = yesterday_rating_sum / meals.count()
+        yesterday_rating = round(yesterday_rating_sum / meals.count(), 2)
     except Exception as err:
         print(err)
         return JsonResponse(err)
@@ -321,15 +322,15 @@ def load_month_meal(request):
 
         return week_number
 
-    month = json.loads(request.body)
+    month = json.loads(request.body)["month"]
 
-    if len(str(month["month"])) == 1:
-        month["month"] = "0" + str(month["month"])
+    if len(str(month)) == 1:
+        month = "0" + str(month)
 
     user_id = request.user.id
     now = timezone.now()
     year = now.strftime("%Y")
-    date = year + '-' + month['month']
+    date = year + '-' + month
 
     meals = Meal.objects.filter(user=user_id, created_at__contains=date)
     meals = list(meals.values())
@@ -404,27 +405,54 @@ def load_since_meal_info(request):
     now = now.strftime('%Y-%m-%d %H:%M:%S')
     now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
 
-    # todo
-    meals = Meal.objects.filter(user=user_id).order_by('-created_at')
-    meals = list(meals.values())
-
     since_info = {
         'meal': 0,
         'coffee': 0,
         'drink': 0,
     }
 
+    # latest_meal = Meal.objects.filter(
+    #     user=user_id, gihoType=None).latest('created_at')
+
+    # latest_coffee = Meal.objects.filter(
+    #     user=user_id, gihoType=0).latest('created_at')
+
+    # latest_drink = Meal.objects.filter(
+    #     user=user_id, gihoType=1).latest('created_at')
+
+    # if latest_meal:
+    #     for meal in latest_meal:
+    #         print(2)
+    #         meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+    #         delta_seconds = int((now - meal_time).total_seconds())
+    #         since_info["meal"] = delta_seconds
+
+    # if latest_coffee:
+    #     for coffee in latest_coffee:
+    #         coffee_time = coffee['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+    #         delta_seconds = int((now - coffee_time).total_seconds())
+    #         since_info["coffee"] = delta_seconds
+
+    # if latest_drink:
+    #     for drink in latest_drink:
+    #         drink_time = drink['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+    #         delta_seconds = int((now - drink_time).total_seconds())
+    #         since_info["drink"] = delta_seconds
+
+    meals = Meal.objects.filter(user=user_id).order_by('-created_at')
+    meals = list(meals.values())
+
     for meal in meals:
         meal_time = meal['created_at'].strftime('%Y-%m-%d %H:%M:%S')
         meal_time = datetime.datetime.strptime(meal_time, '%Y-%m-%d %H:%M:%S')
         delta_seconds = int((now - meal_time).total_seconds())
 
-        if 'gihoType' in meal:
-            if meal['gihoType'] == 0 and since_info['coffee'] == 0:  # 커피
-                since_info['coffee'] = delta_seconds
-            if meal['gihoType'] == 1 and since_info['drink'] == 0:  # 술
-                since_info['drink'] = delta_seconds
-                since_info['meal'] = delta_seconds
+        if meal['gihoType'] == 0 and since_info['coffee'] == 0:  # 커피
+            since_info['coffee'] = delta_seconds
+        elif meal['gihoType'] == 1 and since_info['drink'] == 0:  # 술
+            since_info['drink'] = delta_seconds
+        elif meal['gihoType'] == None and since_info['meal'] == 0:  # 끼니
+            since_info['meal'] = delta_seconds
 
     print(f'since_info:{since_info}')
 
@@ -452,7 +480,8 @@ def load_week_report(request):
             for meal in meals:
                 previous_week_rating_sum += meal.average_rate
 
-            previous_week_rating = previous_week_rating_sum / meals.count()
+            previous_week_rating = round(
+                previous_week_rating_sum / meals.count(), 2)
             return previous_week_rating
         except Exception as err:
             return print(err)
@@ -593,10 +622,11 @@ def load_week_report(request):
                     max_type = "simple"
                     comment2 = "간편식"
 
-        comment5 = "집밥을 많이 먹었어요! " if max_type == "house" else "바깥 음식을 좋아하는 당신! " \
-            if max_type == "out" else f'배달 음식을 너무 많이 먹고있어요! {emoji.emojize(":warning:")}' \
-            if max_type == "delivery" else "간편식을 너무 많이 먹었어요! "
-        comment5 += _get_comments(max_type)
+        if max_type:
+            comment5 = "집밥을 많이 먹었어요! " if max_type == "house" else "바깥 음식을 좋아하는 당신! " \
+                if max_type == "out" else f'배달 음식을 너무 많이 먹고있어요! {emoji.emojize(":warning:")}' \
+                if max_type == "delivery" else "간편식을 너무 많이 먹었어요! "
+            comment5 += _get_comments(max_type)
 
         feedback = [
             '끼리니가 이번주 식단을 평가해주지!\n',
@@ -605,7 +635,7 @@ def load_week_report(request):
             f'{comment2}이 많으며,\n',
             f'건강도 {week_score}에 달하는 당신은 \n\n{comment3}\n',
             comment4,
-            comment5
+            # comment5
         ]
 
         week_report = {
