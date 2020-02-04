@@ -61,11 +61,9 @@ def privacy(request):
 
 
 @csrf_exempt
-def email_login(request):
+def email_register(request):
     body = dict(request.POST)
-
     user_email = body['email']
-    username = body['email']
     password = body['password']
 
     user = User.objects.filter(email=user_email)
@@ -73,7 +71,7 @@ def email_login(request):
         user_data = {
             'email': user_email,
             'username': user_email,
-            'password': user_email
+            'password': password
         }
         user = UserSerializer(data=user_data, partial=True)
         if user.is_valid():
@@ -82,7 +80,36 @@ def email_login(request):
             return Response(status=status.HTTP_200_OK)
         else:
             print("error", user.errors)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        jwt_data = {
+            'email': user_email,
+            'password': user_email  # todo: user 객체로 넣기?
+        }
+        jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
+        print("jwt ", jwt)
+        jwt_access_token = jwt['access']
+        jwt_refresh_token = jwt['refresh']
+        data = {
+            'jwt_access_token': jwt_access_token,
+            'jwt_refresh_token': jwt_refresh_token
+        }
     else:
+        return Response(status=status.HTTP_302_FOUND)
+
+
+@csrf_exempt
+def email_login(request):
+    body = dict(request.POST)
+
+    user_email = body['email']
+    password = body['password']
+
+    user = User.objects.filter(email=user_email)
+    if not user:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -294,7 +321,8 @@ def load_today_meal(request):
     now = timezone.now()
     date = now.strftime("%Y-%m-%d")
 
-    meals = Meal.objects.filter(user=user_id, created_at__contains=date)
+    meals = Meal.objects.filter(
+        user=user_id, created_at__contains=date).order_by(created_at)
     meals = list(meals.values())
 
     return JsonResponse(meals, status=status.HTTP_200_OK, safe=False)

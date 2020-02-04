@@ -56,7 +56,8 @@ class Meal(models.Model):
     picURL = models.CharField(max_length=255, blank=True)
     user = models.ForeignKey('User', on_delete=models.CASCADE)
     created_at = models.DateTimeField(blank=True, null=True)
-    average_rate = models.FloatField(blank=True, null=True)
+    average_rate = models.FloatField(validators=[MinValueValidator(
+        0.0), MaxValueValidator(10.0)], blank=True, null=True)
     # comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
 
 
