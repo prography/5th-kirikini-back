@@ -13,6 +13,7 @@ urlpatterns = [
     path('facebook_login', views.facebook_login, name='facebook_login'),
     path('auto_login', views.auto_login, name='auto_login'),
     path('email_login', views.email_login, name='email_login'),
+    path('email_register', views.email_register, name='email_register'),
     path('meal/', views.create_meal),
     path('meal/yesterday_rating', views.load_yesterday_rating),
     path('meal/today', views.load_today_meal),

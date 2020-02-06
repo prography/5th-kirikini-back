@@ -12,6 +12,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -62,7 +63,7 @@ def privacy(request):
 
 @csrf_exempt
 def email_register(request):
-    body = dict(request.POST)
+    body = json.loads(request.body)
     user_email = body['email']
     password = body['password']
 
@@ -77,14 +78,13 @@ def email_register(request):
         if user.is_valid():
             user.save()
             print("user created")
-            return Response(status=status.HTTP_200_OK)
         else:
             print("error", user.errors)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         jwt_data = {
             'email': user_email,
-            'password': user_email  # todo: user 객체로 넣기?
+            'password': password  # todo: user 객체로 넣기?
         }
         jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
         print("jwt ", jwt)
@@ -94,13 +94,17 @@ def email_register(request):
             'jwt_access_token': jwt_access_token,
             'jwt_refresh_token': jwt_refresh_token
         }
-    else:
+
+        return JsonResponse(data=data, status=status.HTTP_200_OK)
+    else:  # 해당 이메일을 가진 계정이 존재하는 경우
+        print("user_email already exists")
         return Response(status=status.HTTP_302_FOUND)
 
 
 @csrf_exempt
 def email_login(request):
-    body = dict(request.POST)
+    body = json.loads(request.body)
+    print(body)
 
     user_email = body['email']
     password = body['password']
@@ -109,8 +113,26 @@ def email_login(request):
     if not user:
         return Response(status=status.HTTP_404_NOT_FOUND)
     else:
+        print(123)
+        user = authenticate(request, username=user_email, password=password)
+        print(f'{user}')
+        if not user:  # 메일은 존재하나 비밀번호가 틀린 경우
+            return Response(status=status.HTTP_404_FOUND)
+        else:  # 로그인 성공
 
-        return Response(status=status.HTTP_200_OK)
+            jwt_data = {
+                'email': user_email,
+                'password': user_email  # todo: user 객체로 넣기?
+            }
+            jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
+            print("jwt ", jwt)
+            jwt_access_token = jwt['access']
+            jwt_refresh_token = jwt['refresh']
+            data = {
+                'jwt_access_token': jwt_access_token,
+                'jwt_refresh_token': jwt_refresh_token
+            }
+            return JsonResponse(data=data, status=status.HTTP_200_OK)
 
 
 @csrf_exempt
@@ -322,7 +344,7 @@ def load_today_meal(request):
     date = now.strftime("%Y-%m-%d")
 
     meals = Meal.objects.filter(
-        user=user_id, created_at__contains=date).order_by(created_at)
+        user=user_id, created_at__contains=date).order_by('created_at')
     meals = list(meals.values())
 
     return JsonResponse(meals, status=status.HTTP_200_OK, safe=False)
@@ -339,11 +361,13 @@ def load_month_meal(request):
         day_of_week = 1
         week_number = 1
 
+        date = datetime.datetime.strftime(date, "%Y-%m-%d")
+
         for day in month_calendar_dates:
             if day_of_week > 7:
                 week_number += 1
                 day_of_week = 1
-            if date == day:
+            if date == (datetime.datetime.strftime(day, "%Y-%m-%d")):
                 break
             else:
                 day_of_week += 1
@@ -414,7 +438,9 @@ def rate_meal(request):
             meal_rate_serializer.save()
             meal = Meal.objects.get(id=body['meal'])
             rate_counts = MealRate.objects.filter(
-                meal_id=body['meal']).count() - 1
+                meal_id=body['meal']).count()
+
+            print("rate_counts", rate_counts)
 
             meal.average_rate = (meal.average_rate +
                                  body['rating']) / rate_counts
