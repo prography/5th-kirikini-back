@@ -37,20 +37,20 @@ import emoji
 User = get_user_model()
 
 KAKAO_APP_ID = "58e2b8578c74a7039a08d2b7455012a1"
-KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
-# KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
+# KAKAO_REDIRECT_URI = "http://13.124.158.62/kakao_login"
+KAKAO_REDIRECT_URI = "http://localhost:8000/kakao_login"
 
 # FACEBOOK_APP_ID = "650104882182241"
 # FACEBOOK_SECRET = "3a1806fcd6db5e023e0d64db3fd17585"
 # FACEBOOK_REDIRECT_URI = "https://127.0.0.1:8000/facebook_login"
 # FACEBOOK_REST_API = 'http://localhost:8000/rest-auth/facebook/?method=oauth2'
 
-JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
-JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
-JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
-# JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
-# JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
-# JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
+# JWT_OPTAIN_URL = 'http://13.124.158.62/api-jwt-auth/'
+# JWT_VERIFY_URL = 'http://13.124.158.62/api-jwt-auth/verify/'
+# JWT_REFRESH_URL = 'http://13.124.158.62/api-jwt-auth/refresh/'
+JWT_OPTAIN_URL = 'http://localhost:8000/api-jwt-auth/'
+JWT_VERIFY_URL = 'http://localhost:8000/api-jwt-auth/verify/'
+JWT_REFRESH_URL = 'http://localhost:8000/api-jwt-auth/refresh/'
 
 
 def index(request):
@@ -104,7 +104,6 @@ def email_register(request):
 @csrf_exempt
 def email_login(request):
     body = json.loads(request.body)
-    print(body)
 
     user_email = body['email']
     password = body['password']
@@ -113,16 +112,13 @@ def email_login(request):
     if not user:
         return Response(status=status.HTTP_404_NOT_FOUND)
     else:
-        print(123)
         user = authenticate(request, username=user_email, password=password)
-        print(f'{user}')
         if not user:  # 메일은 존재하나 비밀번호가 틀린 경우
             return Response(status=status.HTTP_404_FOUND)
         else:  # 로그인 성공
-
             jwt_data = {
                 'email': user_email,
-                'password': user_email  # todo: user 객체로 넣기?
+                'password': password  # todo: user 객체로 넣기?
             }
             jwt = requests.post(JWT_OPTAIN_URL, data=jwt_data).json()
             print("jwt ", jwt)
@@ -352,27 +348,38 @@ def load_today_meal(request):
 
 @api_view(['GET', 'POST'])
 def load_month_meal(request):
-    def _get_week_of_month(date):
-        if type(date) == str:
-            date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-
-        cal_object = calendar.Calendar(0)
-        month_calendar_dates = cal_object.itermonthdates(date.year, date.month)
-        day_of_week = 1
-        week_number = 1
-
-        date = datetime.datetime.strftime(date, "%Y-%m-%d")
-
-        for day in month_calendar_dates:
-            if day_of_week > 7:
-                week_number += 1
-                day_of_week = 1
-            if date == (datetime.datetime.strftime(day, "%Y-%m-%d")):
+    def _get_week_of_month(tgtdate, meals_by_weeks):
+        days_this_month = calendar.mdays[tgtdate.month]
+        for i in range(1, days_this_month):
+            d = datetime.date(tgtdate.year, tgtdate.month, i)
+            if d.day - d.weekday() > 0:
+                startdate = d
                 break
-            else:
-                day_of_week += 1
 
-        return week_number
+        result = (tgtdate - startdate).days // 7 + 1
+        meals_by_weeks[result]["range"].append()
+        return result
+
+        # if type(date) == str:
+        #     date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+
+        # cal_object = calendar.Calendar(0)
+        # month_calendar_dates = cal_object.itermonthdates(date.year, date.month)
+        # day_of_week = 1
+        # week_number = 1
+
+        # date = datetime.datetime.strftime(date, "%Y-%m-%d")
+
+        # for day in month_calendar_dates:
+        #     if day_of_week > 7:
+        #         week_number += 1
+        #         day_of_week = 1
+        #     if date == (datetime.datetime.strftime(day, "%Y-%m-%d")):
+        #         break
+        #     else:
+        #         day_of_week += 1
+
+        # return week_number
 
     month = json.loads(request.body)["month"]
 
@@ -388,14 +395,29 @@ def load_month_meal(request):
     meals = list(meals.values())
 
     meals_by_weeks = {
-        1: [],
-        2: [],
-        3: [],
-        4: [],
-        5: []
+        1: {
+            "range": [],
+            "meals": []
+        },
+        2: {
+            "range": [],
+            "meals": []
+        },
+        3: {
+            "range": [],
+            "meals": []
+        },
+        4: {
+            "range": [],
+            "meals": []
+        },
+        5: {
+            "range": [],
+            "meals": []
+        }
     }
     for meal in meals:
-        week = _get_week_of_month(meal['created_at'])-1
+        week = _get_week_of_month(meal['created_at'], meals_by_weeks)
         meal['day'] = meal['created_at'].weekday()
         meals_by_weeks[week].append(meal)
 
