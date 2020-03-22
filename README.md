@@ -13,6 +13,7 @@
 
 ```
 ssh -i ~/.ssh/kirikini.pem ubuntu@13.124.158.62
+python manage.py runserver 0:8000
 ```
 
 - 최신 끼리끼니 새로 받아오기

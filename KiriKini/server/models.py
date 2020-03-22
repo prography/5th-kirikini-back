@@ -25,10 +25,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     email = models.EmailField(max_length=255, unique=True)
-    username = models.CharField(max_length=20)
-    # token = models.CharField(max_length=255, null=True)
-    # accessToken = models.CharField(max_length=255, null=True)
-    refreshToken = models.CharField(max_length=255, null=True)
+    username = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
@@ -55,11 +52,12 @@ class Meal(models.Model):
     mealType = models.IntegerField(validators=[MinValueValidator(
         0), MaxValueValidator(3)])  # 0: 집밥, 1: 외식, 2:배달, 3:간편식
     gihoType = models.IntegerField(validators=[MinValueValidator(
-        0), MaxValueValidator(1)], blank=True)  # 0: 커피, 1: 술
+        0), MaxValueValidator(1)], null=True, blank=True)  # 0: 커피, 1: 술
     picURL = models.CharField(max_length=255, blank=True)
     user = models.ForeignKey('User', on_delete=models.CASCADE)
     created_at = models.DateTimeField(blank=True, null=True)
-    average_rate = models.IntegerField(blank=True, null=True)
+    average_rate = models.FloatField(validators=[MinValueValidator(
+        0.0), MaxValueValidator(10.0)], blank=True, null=True)
     # comment = models.ForeignKey('Comment', on_delete=models.CASCADE)
 
 
