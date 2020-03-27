@@ -32,11 +32,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('mealType', models.IntegerField(validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(3)])),
-<<<<<<< HEAD
-                ('gihoType', models.IntegerField(blank=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1)])),
-=======
                 ('gihoType', models.IntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1)])),
->>>>>>> ab24ce5ee12ca6cc0ab2619a291e9a24bd0125d0
                 ('picURL', models.CharField(blank=True, max_length=255)),
                 ('created_at', models.DateTimeField(blank=True, null=True)),
                 ('average_rate', models.FloatField(blank=True, null=True)),
