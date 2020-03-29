@@ -89,26 +89,15 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_swagger',
+    'rest_framework.authtoken',
     'storages',
     'corsheaders',
-
     'server',
-    # 'server.apps.ServerConfig',
-
-    # 소셜 로그인
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.kakao',
-    'allauth.socialaccount.providers.facebook',
-
-    # django-rest-auth
-    'rest_framework.authtoken',
     'rest_auth',
     'rest_auth.registration',
-
-    'sslserver'
 ]
 
 SITE_ID = 1
@@ -146,9 +135,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = 'KiriKini.wsgi.application'
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators

@@ -13,3 +13,5 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+WSGI_APPLICATION = 'KiriKini.wsgi.dev.application'

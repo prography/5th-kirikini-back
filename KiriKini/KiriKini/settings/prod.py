@@ -13,3 +13,5 @@ DATABASES = {
         'PASSWORD': get_secret("RDS_PASSWORD"),
     }
 }
+
+WSGI_APPLICATION = 'KiriKini.wsgi.prod.application'
