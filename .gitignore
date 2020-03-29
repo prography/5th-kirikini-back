@@ -1,6 +1,3 @@
-# debug/prod settings 분리
-# wsgi.py
-
 # Created by https://www.gitignore.io/api/macos,python,django,windows
 # Edit at https://www.gitignore.io/?templates=macos,python,django,windows
 
