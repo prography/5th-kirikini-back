@@ -1,5 +1,4 @@
-from . import base
-from .base import get_secret
+from .base import *
 
 DEBUG = False
 ALLOWED_HOSTS = ['13.124.158.62']
