@@ -57,7 +57,7 @@ pytz==2019.3
 PyYAML==5.3
 requests==2.22.0
 requests-oauthlib==1.2.0
-rsa==3.4.2
+rsa==4.7
 s3transfer==0.2.1
 semantic-version==2.5.0
 sentry-sdk==0.14.0
